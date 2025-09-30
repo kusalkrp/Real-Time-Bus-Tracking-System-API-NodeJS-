@@ -134,7 +134,26 @@ app.delete('/routes/:routeId', authenticate, authorize(['admin']), async (req, r
   }
 });
 
-
+// Buses Resource
+app.get('/buses', authenticate, authorize(['operator', 'admin']), async (req, res) => {
+  const { operatorId, page = 1, limit = 20 } = req.query;
+  let query = 'SELECT * FROM buses';
+  const values = [];
+  if (req.user.role === 'operator') {
+    query += ' WHERE operator_id = $1';
+    values.push(req.user.operatorId);
+  } else if (operatorId) {
+    query += ' WHERE operator_id = $1';
+    values.push(operatorId);
+  }
+  query += ` LIMIT ${limit} OFFSET ${(page - 1) * limit}`;
+  try {
+    const result = await pool.query(query, values);
+    res.json({ buses: result.rows, total: result.rowCount });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 
 const PORT = process.env.PORT || 3000;
