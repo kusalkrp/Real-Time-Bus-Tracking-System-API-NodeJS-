@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: bus_tracking_db_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bus_tracking
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - bus_tracking_network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: bus_tracking_redis_dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - bus_tracking_network
+
+  # Node.js API Application (Development with hot reload)
+  api:
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: bus_tracking_api_dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=bus_tracking
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres123
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=your_jwt_secret_key_here_change_in_production
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - bus_tracking_network
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+
+networks:
+  bus_tracking_network:
+    driver: bridge
