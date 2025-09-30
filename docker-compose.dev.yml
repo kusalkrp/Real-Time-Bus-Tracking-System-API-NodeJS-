@@ -7,11 +7,11 @@ services:
     container_name: bus_tracking_db_dev
     restart: unless-stopped
     environment:
-      POSTGRES_DB: bus_tracking
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -38,17 +38,17 @@ services:
     container_name: bus_tracking_api_dev
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
     environment:
-      - NODE_ENV=development
-      - PORT=3000
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=${PORT:-3000}
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_NAME=bus_tracking
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres123
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=your_jwt_secret_key_here_change_in_production
+      - JWT_SECRET=${JWT_SECRET}
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules

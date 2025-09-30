@@ -923,31 +923,70 @@ The collection includes automated token management:
 
 ## ⚙️ Environment Variables
 
+### Setup Environment Variables
+
+1. **Copy the example file:**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Edit the `.env` file** with your actual values:
+   ```bash
+   # Database Configuration
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=bus_tracking
+   DB_USER=postgres
+   DB_PASSWORD=your-secure-password-here
+
+   # Redis Configuration
+   REDIS_URL=redis://localhost:6379
+
+   # JWT Configuration
+   JWT_SECRET=your-super-secret-jwt-key-make-it-long-and-random
+
+   # Application Configuration
+   PORT=3000
+   NODE_ENV=development
+   ```
+
 ### Required Variables
 
-```env
-# Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=bus_tracking
-DB_USER=postgres
-DB_PASSWORD=password
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `DB_HOST` | PostgreSQL host | `localhost` | ✅ |
+| `DB_PORT` | PostgreSQL port | `5432` | ✅ |
+| `DB_NAME` | Database name | `bus_tracking` | ✅ |
+| `DB_USER` | Database username | `postgres` | ✅ |
+| `DB_PASSWORD` | Database password | - | ✅ |
+| `REDIS_URL` | Redis connection URL | `redis://localhost:6379` | ✅ |
+| `JWT_SECRET` | JWT signing secret | - | ✅ |
+| `PORT` | API server port | `3000` | ✅ |
+| `NODE_ENV` | Environment mode | `development` | ✅ |
 
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
+### Security Best Practices
 
-# Security
-JWT_SECRET=your-super-secret-jwt-key
+⚠️ **Important Security Notes:**
 
-# Server
-PORT=3000
-NODE_ENV=development
-```
+- **Never commit `.env` files** to version control
+- **Use strong, unique passwords** for database
+- **Generate random JWT secrets** (at least 32 characters)
+- **Change default values** before production deployment
+- **Use different values** for development and production
 
 ### Docker Environment
 
-Environment variables are automatically configured in `docker-compose.yml` for containerized deployment.
+Environment variables are automatically loaded from `.env` file when using Docker Compose:
+
+```bash
+# Development
+docker-compose -f docker-compose.dev.yml up
+
+# Production
+docker-compose up
+```
+
+For production deployment, set environment variables in your deployment platform (AWS, Heroku, etc.).
 
 ## 🧪 Testing
 
