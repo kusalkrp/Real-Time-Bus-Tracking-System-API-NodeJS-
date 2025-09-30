@@ -134,6 +134,66 @@ app.delete('/routes/:routeId', authenticate, authorize(['admin']), async (req, r
   }
 });
 
+// Buses Resource
+app.get('/buses', authenticate, authorize(['operator', 'admin']), async (req, res) => {
+  const { operatorId, page = 1, limit = 20 } = req.query;
+  let query = 'SELECT * FROM buses';
+  const values = [];
+  if (req.user.role === 'operator') {
+    query += ' WHERE operator_id = $1';
+    values.push(req.user.operatorId);
+  } else if (operatorId) {
+    query += ' WHERE operator_id = $1';
+    values.push(operatorId);
+  }
+  query += ` LIMIT ${limit} OFFSET ${(page - 1) * limit}`;
+  try {
+    const result = await pool.query(query, values);
+    res.json({ buses: result.rows, total: result.rowCount });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/buses/:busId', authenticate, authorize(['commuter', 'operator', 'admin']), async (req, res) => {
+  const { busId } = req.params;
+  try {
+    const result = await pool.query('SELECT * FROM buses WHERE id = $1', [busId]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Bus not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/buses', authenticate, authorize(['operator', 'admin']), async (req, res) => {
+  const { plate_no, operator_id, capacity, type } = req.body;
+  const opId = req.user.role === 'operator' ? req.user.operatorId : operator_id;
+  try {
+    const result = await pool.query(
+      'INSERT INTO buses (plate_no, operator_id, capacity, type) VALUES ($1, $2, $3, $4) RETURNING *',
+      [plate_no, opId, capacity, type]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/buses/:busId', authenticate, authorize(['operator', 'admin']), async (req, res) => {
+  const { busId } = req.params;
+  const { capacity, type } = req.body;
+  try {
+    const result = await pool.query(
+      'UPDATE buses SET capacity = $1, type = $2 WHERE id = $3 AND (operator_id = $4 OR $5 = \'admin\') RETURNING *',
+      [capacity, type, busId, req.user.operatorId, req.user.role]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Bus not found or unauthorized' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 
 
