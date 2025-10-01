@@ -14,6 +14,7 @@ const authRoutes = require('./routes/auth');
 const routeRoutes = require('./routes/routes');
 const busRoutes = require('./routes/buses');
 const tripRoutes = require('./routes/trips');
+const locationRoutes = require('./routes/locations');
 
 console.log('All routes imported successfully');
 
@@ -25,6 +26,7 @@ app.use('/auth', authRoutes);
 app.use('/routes', routeRoutes);
 app.use('/buses', busRoutes);
 app.use('/trips', tripRoutes);
+app.use('/', locationRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
