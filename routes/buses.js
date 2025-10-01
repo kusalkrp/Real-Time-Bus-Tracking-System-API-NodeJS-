@@ -14,20 +14,44 @@ router.get('/', authenticate, authorize(['operator', 'admin']), async (req, res)
   let query = 'SELECT * FROM buses';
   const values = [];
   let paramIdx = 1;
+  let whereClause = '';
+  let whereValues = [];
   if (req.user.role === 'operator') {
-    query += ` WHERE operator_id = $${paramIdx}`;
+    whereClause = ` WHERE operator_id = $${paramIdx}`;
     values.push(req.user.operatorId);
+    whereValues.push(req.user.operatorId);
     paramIdx++;
   } else if (operatorId) {
-    query += ` WHERE operator_id = $${paramIdx}`;
+    whereClause = ` WHERE operator_id = $${paramIdx}`;
     values.push(operatorId);
+    whereValues.push(operatorId);
     paramIdx++;
   }
+  query += whereClause;
   query += ` LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`;
   values.push(limit, (page - 1) * limit);
+  
+  // Build count query
+  const countQuery = `SELECT COUNT(*) FROM buses${whereClause}`;
+  
   try {
-    const result = await pool.query(query, values);
-    res.json({ buses: result.rows, total: result.rowCount });
+    // Run both queries in parallel
+    const [result, countResult] = await Promise.all([
+      pool.query(query, values),
+      pool.query(countQuery, whereValues)
+    ]);
+    const total = parseInt(countResult.rows[0].count, 10);
+    const totalPages = Math.ceil(total / limit);
+    
+    res.json({ 
+      buses: result.rows, 
+      total,
+      page,
+      limit,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1
+    });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -70,20 +94,33 @@ router.post('/', authenticate, authorize(['operator', 'admin']), async (req, res
   }
 
   try {
-    // Generate next bus ID
-    const idResult = await pool.query('SELECT id FROM buses ORDER BY id DESC LIMIT 1');
-    let nextId = 'BUS001';
-    if (idResult.rows.length > 0) {
-      const lastId = idResult.rows[0].id;
-      const num = parseInt(lastId.substring(3)) + 1;
-      nextId = `BUS${num.toString().padStart(3, '0')}`;
-    }
+    // Use a transaction to prevent race conditions in bus ID generation
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      // Lock the buses table to prevent concurrent inserts
+      const idResult = await client.query('SELECT id FROM buses ORDER BY id DESC LIMIT 1 FOR UPDATE');
+      let nextId = 'BUS001';
+      if (idResult.rows.length > 0) {
+        const lastId = idResult.rows[0].id;
+        const num = parseInt(lastId.substring(3)) + 1;
+        nextId = `BUS${num.toString().padStart(3, '0')}`;
+      }
 
-    const result = await pool.query(
-      'INSERT INTO buses (id, plate_no, operator_id, capacity, type) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [nextId, plate_no.trim(), opId, capacity, type.trim()]
-    );
-    res.status(201).json(result.rows[0]);
+      const result = await client.query(
+        'INSERT INTO buses (id, plate_no, operator_id, capacity, type) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        [nextId, plate_no.trim(), opId, capacity, type.trim()]
+      );
+      
+      await client.query('COMMIT');
+      res.status(201).json(result.rows[0]);
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
   } catch (err) {
     console.error('Bus creation error:', err);
     if (err.code === '23505') { // Unique constraint violation
