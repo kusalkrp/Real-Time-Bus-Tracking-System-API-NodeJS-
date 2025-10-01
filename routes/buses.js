@@ -35,14 +35,13 @@ router.get('/', authenticate, authorize(['operator', 'admin']), async (req, res)
 
 router.get('/:busId', authenticate, authorize(['commuter', 'operator', 'admin']), async (req, res) => {
   const { busId } = req.params;
-  const id = parseInt(busId, 10);
 
-  if (isNaN(id) || id <= 0) {
+  if (!busId || typeof busId !== 'string' || !busId.trim()) {
     return res.status(400).json({ error: 'Invalid bus ID' });
   }
 
   try {
-    const result = await pool.query('SELECT * FROM buses WHERE id = $1', [id]);
+    const result = await pool.query('SELECT * FROM buses WHERE id = $1', [busId]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Bus not found' });
     res.json(result.rows[0]);
   } catch (err) {
