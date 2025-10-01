@@ -7,7 +7,7 @@ console.log('Starting app.js');
 // Import configurations and middleware
 const { redisClient } = require('./config/database');
 
-console.log('Database config imported');
+console.log('Database config imported successfully');
 
 // Import route modules
 const authRoutes = require('./routes/auth');
