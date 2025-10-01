@@ -4,6 +4,9 @@ const { authenticate, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Constants
+const MILLISECONDS_PER_HOUR = 3600000;
+
 // Trips Resource
 router.get('/routes/:routeId/trips', authenticate, authorize(['commuter', 'operator', 'admin']), async (req, res) => {
   const { routeId } = req.params;
@@ -14,32 +17,58 @@ router.get('/routes/:routeId/trips', authenticate, authorize(['commuter', 'opera
   }
 
   const { startDate, endDate, page = 1, limit = 20 } = req.query;
-  let query = 'SELECT t.* FROM trips t INNER JOIN buses b ON t.bus_id = b.id WHERE t.route_id = $1';
+  
+  // Sanitize pagination parameters
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+  
+  let baseQuery = 'FROM trips t INNER JOIN buses b ON t.bus_id = b.id WHERE t.route_id = $1';
   const values = [routeIdNum];
   let paramIdx = 2;
 
   // Add operator filtering for operators
   if (req.user.role === 'operator') {
-    query += ` AND b.operator_id = $${paramIdx}`;
+    baseQuery += ` AND b.operator_id = $${paramIdx}`;
     values.push(req.user.operatorId);
     paramIdx++;
   }
 
   if (startDate) {
-    query += ` AND t.departure_time >= $${paramIdx}`;
+    baseQuery += ` AND t.departure_time >= $${paramIdx}`;
     values.push(startDate);
     paramIdx++;
   }
   if (endDate) {
-    query += ` AND t.departure_time <= $${paramIdx}`;
+    baseQuery += ` AND t.departure_time <= $${paramIdx}`;
     values.push(endDate);
     paramIdx++;
   }
-  query += ` ORDER BY t.departure_time LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`;
-  values.push(limit, (page - 1) * limit);
+  
+  // Count query (no LIMIT/OFFSET)
+  const countQuery = `SELECT COUNT(*) ${baseQuery}`;
+  // Data query (with LIMIT/OFFSET)
+  const dataQuery = `SELECT t.* ${baseQuery} ORDER BY t.departure_time LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`;
+  const dataValues = [...values, limitNum, (pageNum - 1) * limitNum];
+  
   try {
-    const result = await pool.query(query, values);
-    res.json({ trips: result.rows, total: result.rowCount });
+    // Run both queries in parallel for better performance
+    const [countResult, dataResult] = await Promise.all([
+      pool.query(countQuery, values),
+      pool.query(dataQuery, dataValues)
+    ]);
+    
+    const total = parseInt(countResult.rows[0].count, 10);
+    const totalPages = Math.ceil(total / limitNum);
+    
+    res.json({ 
+      trips: dataResult.rows, 
+      total,
+      page: pageNum,
+      limit: limitNum,
+      totalPages,
+      hasNext: pageNum < totalPages,
+      hasPrev: pageNum > 1
+    });
   } catch (err) {
     console.error('Trips query error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -104,22 +133,35 @@ router.post('/', authenticate, authorize(['operator', 'admin']), async (req, res
     // Check if route exists
     const route = await pool.query('SELECT estimated_time_hrs FROM routes WHERE id = $1', [route_id]);
     if (route.rows.length === 0) return res.status(404).json({ error: 'Route not found' });
-    const arrival_time = new Date(new Date(departure_time).getTime() + route.rows[0].estimated_time_hrs * 3600000).toISOString();
+    const arrival_time = new Date(new Date(departure_time).getTime() + route.rows[0].estimated_time_hrs * MILLISECONDS_PER_HOUR).toISOString();
     
-    // Generate next trip ID
-    const idResult = await pool.query('SELECT id FROM trips ORDER BY id DESC LIMIT 1');
-    let nextId = 'TRIP001';
-    if (idResult.rows.length > 0) {
-      const lastId = idResult.rows[0].id;
-      const num = parseInt(lastId.substring(4)) + 1;
-      nextId = `TRIP${num.toString().padStart(3, '0')}`;
-    }
+    // Use a transaction to prevent race conditions in trip ID generation
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      // Lock the trips table to prevent concurrent inserts
+      const idResult = await client.query('SELECT id FROM trips ORDER BY id DESC LIMIT 1 FOR UPDATE');
+      let nextId = 'TRIP001';
+      if (idResult.rows.length > 0) {
+        const lastId = idResult.rows[0].id;
+        const num = parseInt(lastId.substring(4)) + 1;
+        nextId = `TRIP${num.toString().padStart(3, '0')}`;
+      }
 
-    const result = await pool.query(
-      'INSERT INTO trips (id, bus_id, route_id, departure_time, arrival_time, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [nextId, bus_id.trim(), route_id, departure_time, arrival_time, 'Scheduled']
-    );
-    res.status(201).json(result.rows[0]);
+      const result = await client.query(
+        'INSERT INTO trips (id, bus_id, route_id, departure_time, arrival_time, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+        [nextId, bus_id.trim(), route_id, departure_time, arrival_time, 'Scheduled']
+      );
+      
+      await client.query('COMMIT');
+      res.status(201).json(result.rows[0]);
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
   } catch (err) {
     console.error('Trip creation error:', err);
     if (err.code === '23505') { // Unique constraint violation
