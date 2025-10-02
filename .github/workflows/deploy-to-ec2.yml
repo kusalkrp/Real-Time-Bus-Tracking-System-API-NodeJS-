@@ -61,7 +61,7 @@ jobs:
           sleep 15  # Wait a bit more for services to be ready
           
           # Test if the API is responding
-          response=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.EC2_HOST }}:3000/health || echo "000")
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://busapi.duckdns.org/health || echo "000")
           
           if [ "$response" = "200" ]; then
             echo "✅ Health check passed - API is responding"
