@@ -157,7 +157,7 @@ graph TB
 3. **Update domain configuration**
    ```bash
    # Edit docker-compose.yml
-   # Change busapi.duckdns.org to your domain
+   # Change subdomain.duckdns.org to your domain
    nano docker-compose.yml
    ```
 
@@ -542,7 +542,7 @@ networks:
 3. **Configure Domain DNS**
    ```bash
    # Point your domain to EC2 public IP
-   # A Record: busapi.yourdomain.com → EC2_PUBLIC_IP
+   # A Record: subdomain.yourdomain.com → EC2_PUBLIC_IP
    ```
 
 4. **Deploy Application**
@@ -556,7 +556,7 @@ networks:
    nano .env  # Update with production values
    
    # Update domain in docker-compose.yml
-   sed -i 's/busapi.duckdns.org/busapi.yourdomain.com/g' docker-compose.yml
+   sed -i 's/subdomain.duckdns.org/subdomain.yourdomain.com/g' docker-compose.yml
    
    # Deploy
    docker-compose up -d
@@ -615,7 +615,7 @@ traefik:
   command:
     - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
     - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"  
-    - "--certificatesresolvers.myresolver.acme.email=kusalcoc1212@gmail.com"
+    - "--certificatesresolvers.myresolver.acme.email=youremail@example.com"
     - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
 ```
 
@@ -632,10 +632,10 @@ traefik:
 
 ```bash
 # Check SSL certificate status
-openssl s_client -connect busapi.yourdomain.com:443 -servername busapi.yourdomain.com
+openssl s_client -connect subdomain.yourdomain.com:443 -servername subdomain.yourdomain.com
 
 # Verify certificate chain
-curl -I https://busapi.yourdomain.com/health
+curl -I https://subdomain.yourdomain.com/health
 
 # Check SSL Labs rating
 # Visit: https://www.ssllabs.com/ssltest/
@@ -714,7 +714,7 @@ const pool = new Pool({
 #### **API Health Endpoint**
 ```bash
 # Basic health check
-curl https://busapi.yourdomain.com/health
+curl https://subdomain.yourdomain.com/health
 
 # Expected response
 {
@@ -775,7 +775,7 @@ GET {{base_url}}/trips/TRIP001/location  # Get current location
 #### **Authentication Test**
 ```bash
 # Login as admin
-curl -X POST https://busapi.yourdomain.com/auth/login \
+curl -X POST https://subdomain.yourdomain.com/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@ntc.gov.lk",
@@ -787,13 +787,13 @@ export TOKEN="eyJhbGciOiJIUzI1NiIs..."
 
 # Test protected route
 curl -H "Authorization: Bearer $TOKEN" \
-  https://busapi.yourdomain.com/routes
+  https://subdomain.yourdomain.com/routes
 ```
 
 #### **Location Update Test**
 ```bash
 # Update bus location (operator only)
-curl -X POST https://busapi.yourdomain.com/buses/BUS001/location \
+curl -X POST https://subdomain.yourdomain.com/buses/BUS001/location \
   -H "Authorization: Bearer $OPERATOR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
