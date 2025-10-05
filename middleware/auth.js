@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 // Sample users for auth (in production, store in DB)
 const users = [

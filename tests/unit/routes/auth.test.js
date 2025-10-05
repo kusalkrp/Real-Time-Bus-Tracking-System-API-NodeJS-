@@ -10,8 +10,8 @@ jest.mock('../../../middleware/auth', () => ({
   ]
 }));
 
-// Mock bcrypt
-jest.mock('bcrypt', () => ({
+// Mock bcryptjs
+jest.mock('bcryptjs', () => ({
   compareSync: jest.fn((plain, hashed) => {
     // Mock comparison: return true if password matches expected
     if (plain === 'correctpass' && hashed === '$2b$10$examplehashedpassword') return true;
