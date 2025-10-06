@@ -1,18 +1,3 @@
-# 🚌 NTC Real-Time ## 📋 Table of Contents
-
-- [✨ Core Features](#-core-features)
-- [🏗️ System Architecture](#️-system-architecture)
-- [🛠️ Technology Stack](#️-technology-stack)
-- [🚀 Quick Start](#-quick-start)
-- [📖 API Implementation](#-api-implementation)
-- [🗄️ Database Architecture & Implementation](#️-database-architecture--implementation)
-- [🐳 Docker Deployment](#-docker-deployment)
-- [🔒 Security & Authentication](#-security--authentication)
-- [🧪 Comprehensive Testing](#-comprehensive-testing)
-- [🔧 Implementation Architecture](#-implementation-architecture)
-- [📊 System Monitoring](#-system-monitoring)
-- [📚 Complete Documentation Suite](#-complete-documentation-suite)System API
-
 <div align="center">
 
 [![Node.js](https://img.shields.io/badge/Node.js-18.x-green.svg)](https://nodejs.org/)
@@ -28,23 +13,22 @@
 
 </div>
 
----
-
-## 📋 Table of Contents
-
 - [✨ Core Features](#-core-features)
 - [🏗️ System Architecture](#️-system-architecture)
 - [🛠️ Technology Stack](#️-technology-stack)
 - [🚀 Quick Start](#-quick-start)
 - [📖 API Implementation](#-api-implementation)
-- [�️ Database Architecture & Implementation](#️-database-architecture--implementation)
+- [🗄️ Database Architecture & Implementation](#️-database-architecture--implementation)
 - [🐳 Docker Deployment](#-docker-deployment)
 - [🔒 Security & Authentication](#-security--authentication)
-- [⚡ Performance & Caching](#-performance--caching)
-- [� Complete Documentation Suite](#-complete-documentation-suite)
+- [🧪 Comprehensive Testing](#-comprehensive-testing)
+- [🔧 Implementation Architecture](#-implementation-architecture)
+- [📊 System Monitoring](#-system-monitoring)
+- [📚 Complete Documentation Suite](#-complete-documentation-suite)System API
+
+
 
 ---
-
 ## ✨ Core Features
 
 ### 🚌 **NTC-Compliant Transport Management**
