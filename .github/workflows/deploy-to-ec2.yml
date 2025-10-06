@@ -48,7 +48,7 @@ jobs:
             docker-compose up -d --build
             
             echo "⏳ Waiting for services to start..."
-            sleep 60
+            sleep 50
             
             echo "🔍 Checking container status..."
             docker-compose ps
