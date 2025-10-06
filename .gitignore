@@ -10,6 +10,8 @@
 .snapshots/
 #Testing Output folder
 .output/
+node_modules/
+coverage/
 #Extension App-file
 *.app
 #Rapid Application Development File
