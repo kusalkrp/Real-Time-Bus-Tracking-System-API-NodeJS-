@@ -112,9 +112,6 @@ coverage/
 build/
 dist/
 
-# Lock files (uncomment if you want to ignore)
-# package-lock.json
-# yarn.lock
 
 ### AL ### (keeping original AL entries)
 #Template for AL projects for Dynamics 365 Business Central
