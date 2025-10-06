@@ -41,14 +41,19 @@ jobs:
             echo "🛑 Stopping existing containers..."
             docker-compose down
             
+            echo "️ Removing database volume to force migration..."
+            docker-compose down -v
+            
             echo "🏗️ Building and starting containers..."
             docker-compose up -d --build
             
             echo "⏳ Waiting for services to start..."
-            sleep 45
+            sleep 60
             
             echo "🔍 Checking container status..."
             docker-compose ps
+            
+
             
             echo "🎉 Deployment completed successfully!"
           EOF
