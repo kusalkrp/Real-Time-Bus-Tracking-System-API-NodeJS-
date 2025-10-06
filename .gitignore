@@ -8,6 +8,8 @@
 .alpackages/
 #Snapshots folder
 .snapshots/
+node_modules/
+coverage/
 #Testing Output folder
 .output/
 #Extension App-file
