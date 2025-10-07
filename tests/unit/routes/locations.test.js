@@ -19,7 +19,11 @@ jest.mock('../../../middleware/auth', () => ({
     req.user = { id: 1, role: 'admin' }; // Default to admin
     next();
   }),
-  authorize: (roles) => (req, res, next) => next() // Always allow for route testing
+  authorize: (roles) => (req, res, next) => next(), // Always allow for route testing
+  validatePermit: jest.fn((req, res, next) => {
+    req.busPermit = 'NTC-001-2024';
+    next();
+  })
 }));
 
 const { pool, redisClient } = require('../../../config/database');
@@ -108,6 +112,13 @@ describe('Locations Routes', () => {
     });
 
     it('should update bus location successfully', async () => {
+      // Set up as operator for location updates
+      const { authenticate } = require('../../../middleware/auth');
+      authenticate.mockImplementation((req, res, next) => {
+        req.user = { id: 2, role: 'operator', operatorId: 'op1' };
+        next();
+      });
+
       const locationData = {
         latitude: 6.9271,
         longitude: 79.8612,
@@ -115,11 +126,14 @@ describe('Locations Routes', () => {
       };
 
       mockPoolQuery.mockImplementation((query, values) => {
-        if (query.includes('SELECT * FROM buses')) {
-          return Promise.resolve({ rows: [{ id: 'BUS001', operator_id: 'op1' }] });
+        if (query.includes('SELECT t.id as trip_id, t.route_id, r.route_number')) {
+          return Promise.resolve({ rows: [{ trip_id: 'TRIP001', route_id: 1, route_number: '138' }] });
         }
-        if (query.includes('SELECT id FROM trips')) {
-          return Promise.resolve({ rows: [{ id: 'TRIP001' }] });
+        if (query.includes('SELECT rs.id, rs.segment_order')) {
+          return Promise.resolve({ rows: [] }); // No segments for simplicity
+        }
+        if (query.includes('SELECT t.departure_time, t.arrival_time')) {
+          return Promise.resolve({ rows: [{ departure_time: new Date().toISOString(), arrival_time: new Date(Date.now() + 3600000).toISOString(), permit_number: 'NTC-001-2024', plate_no: 'WP-ABC-1234' }] });
         }
         if (query.includes('INSERT INTO locations')) {
           return Promise.resolve({ rows: [] });
@@ -154,17 +168,43 @@ describe('Locations Routes', () => {
     });
 
     it('should return 403 for operator not owning the bus', async () => {
-      mockPoolQuery.mockResolvedValue({ rows: [] }); // No bus found for operator
+      // Set up as different operator who doesn't own the bus
+      const { authenticate, validatePermit } = require('../../../middleware/auth');
+      authenticate.mockImplementation((req, res, next) => {
+        req.user = { id: 3, role: 'operator', operatorId: 'op2' };
+        next();
+      });
+
+      // Mock validatePermit to check ownership and reject
+      validatePermit.mockImplementation((req, res, next) => {
+        return res.status(403).json({ 
+          error: 'Unauthorized: Invalid permit or you do not own this bus',
+          code: 'INVALID_PERMIT'
+        });
+      });
 
       const response = await request(app)
         .post('/locations/buses/BUS001/location')
         .send({ latitude: 6.9271, longitude: 79.8612 })
         .expect(403);
 
-      expect(response.body).toHaveProperty('error', 'Unauthorized: You do not own this bus');
+      expect(response.body).toHaveProperty('error', 'Unauthorized: Invalid permit or you do not own this bus');
     });
 
     it('should return 400 when no active trip', async () => {
+      // Set up as operator for location updates
+      const { authenticate } = require('../../../middleware/auth');
+      authenticate.mockImplementation((req, res, next) => {
+        req.user = { id: 2, role: 'operator', operatorId: 'op1' };
+        next();
+      });
+
+      // Mock validatePermit to pass (simulate owner)
+      const { validatePermit } = require('../../../middleware/auth');
+      validatePermit.mockImplementation((req, res, next) => {
+        next(); // Allow the request to proceed
+      });
+
       mockPoolQuery.mockImplementation((query, values) => {
         if (query.includes('SELECT * FROM buses')) {
           return Promise.resolve({ rows: [{ id: 'BUS001', operator_id: 'op1' }] });
@@ -184,12 +224,28 @@ describe('Locations Routes', () => {
     });
 
     it('should handle speed_kmh as 0 when not provided', async () => {
+      // Set up as operator for location updates
+      const { authenticate } = require('../../../middleware/auth');
+      authenticate.mockImplementation((req, res, next) => {
+        req.user = { id: 2, role: 'operator', operatorId: 'op1' };
+        next();
+      });
+
+      // Mock validatePermit to pass (simulate owner)
+      const { validatePermit } = require('../../../middleware/auth');
+      validatePermit.mockImplementation((req, res, next) => {
+        next(); // Allow the request to proceed
+      });
+
       mockPoolQuery.mockImplementation((query, values) => {
-        if (query.includes('SELECT * FROM buses')) {
-          return Promise.resolve({ rows: [{ id: 'BUS001', operator_id: 'op1' }] });
+        if (query.includes('SELECT t.id as trip_id, t.route_id, r.route_number')) {
+          return Promise.resolve({ rows: [{ trip_id: 'TRIP001', route_id: 1, route_number: '138' }] });
         }
-        if (query.includes('SELECT id FROM trips')) {
-          return Promise.resolve({ rows: [{ id: 'TRIP001' }] });
+        if (query.includes('SELECT rs.id, rs.segment_order')) {
+          return Promise.resolve({ rows: [] }); // No segments for simplicity
+        }
+        if (query.includes('SELECT t.departure_time, t.arrival_time')) {
+          return Promise.resolve({ rows: [{ departure_time: new Date().toISOString(), arrival_time: new Date(Date.now() + 3600000).toISOString(), permit_number: 'NTC-001-2024', plate_no: 'WP-ABC-1234' }] });
         }
         if (query.includes('INSERT INTO locations')) {
           return Promise.resolve({ rows: [] });
