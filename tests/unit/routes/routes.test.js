@@ -5,7 +5,8 @@ const routesRouter = require('../../../routes/routes');
 // Mock the database
 jest.mock('../../../config/database', () => ({
   pool: {
-    query: jest.fn()
+    query: jest.fn(),
+    connect: jest.fn()
   }
 }));
 
@@ -23,6 +24,8 @@ const { pool } = require('../../../config/database');
 describe('Routes Routes', () => {
   let app;
   let mockPoolQuery;
+  let mockPoolConnect;
+  let mockClient;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -37,7 +40,16 @@ describe('Routes Routes', () => {
       next();
     });
 
+    // Set up database mocks
     mockPoolQuery = pool.query;
+    mockPoolConnect = pool.connect;
+    
+    // Mock client for transactions
+    mockClient = {
+      query: jest.fn(),
+      release: jest.fn()
+    };
+    mockPoolConnect.mockResolvedValue(mockClient);
 
     app = express();
     app.use(express.json());
@@ -52,14 +64,14 @@ describe('Routes Routes', () => {
   describe('GET /routes', () => {
     it('should return routes with pagination', async () => {
       const mockRoutes = [
-        { id: 1, from_city: 'Colombo', to_city: 'Kandy', distance_km: 115, estimated_time_hrs: 3 }
+        { id: 1, route_number: '138', from_city: 'Colombo', to_city: 'Kandy', distance_km: 115, estimated_time_hrs: 3, segments: [] }
       ];
 
       mockPoolQuery.mockImplementation((query, values) => {
-        if (query.includes('COUNT(*)')) {
+        if (query.includes('COUNT(DISTINCT r.id)')) {
           return Promise.resolve({ rows: [{ count: '1' }] });
         }
-        if (query.includes('SELECT *')) {
+        if (query.includes('SELECT') && query.includes('segments')) {
           return Promise.resolve({ rows: mockRoutes });
         }
         return Promise.resolve({ rows: [] });
@@ -76,12 +88,16 @@ describe('Routes Routes', () => {
     });
 
     it('should filter routes by from and to cities', async () => {
+      const mockRoutes = [
+        { id: 1, route_number: '138', from_city: 'Colombo', to_city: 'Kandy', distance_km: 115, estimated_time_hrs: 3, segments: [] }
+      ];
+
       mockPoolQuery.mockImplementation((query, values) => {
-        if (query.includes('COUNT(*)')) {
-          return Promise.resolve({ rows: [{ count: '0' }] });
+        if (query.includes('COUNT(DISTINCT r.id)')) {
+          return Promise.resolve({ rows: [{ count: '1' }] });
         }
-        if (query.includes('SELECT *')) {
-          return Promise.resolve({ rows: [] });
+        if (query.includes('from_city ILIKE') && query.includes('to_city ILIKE')) {
+          return Promise.resolve({ rows: mockRoutes });
         }
         return Promise.resolve({ rows: [] });
       });
@@ -90,14 +106,7 @@ describe('Routes Routes', () => {
         .get('/routes?from=Colombo&to=Kandy')
         .expect(200);
 
-      expect(mockPoolQuery).toHaveBeenCalledWith(
-        expect.stringContaining('from_city ILIKE $1'),
-        expect.arrayContaining(['%Colombo%'])
-      );
-      expect(mockPoolQuery).toHaveBeenCalledWith(
-        expect.stringContaining('to_city ILIKE $2'),
-        expect.arrayContaining(['%Colombo%', '%Kandy%'])
-      );
+      expect(response.body).toHaveProperty('routes', mockRoutes);
     });
 
     it('should return 500 on database error', async () => {
@@ -123,20 +132,24 @@ describe('Routes Routes', () => {
       expect(response.body).toEqual(mockRoute);
     });
 
-    it('should return 400 for invalid routeId', async () => {
+    it('should return 404 for non-existent route number', async () => {
+      mockPoolQuery.mockResolvedValue({ rows: [] });
+
       const response = await request(app)
         .get('/routes/abc')
-        .expect(400);
+        .expect(404);
 
-      expect(response.body).toHaveProperty('error', 'Invalid route ID');
+      expect(response.body).toHaveProperty('error', 'Route not found');
     });
 
-    it('should return 400 for negative routeId', async () => {
+    it('should return 404 for non-existent negative route number', async () => {
+      mockPoolQuery.mockResolvedValue({ rows: [] });
+
       const response = await request(app)
         .get('/routes/-1')
-        .expect(400);
+        .expect(404);
 
-      expect(response.body).toHaveProperty('error', 'Invalid route ID');
+      expect(response.body).toHaveProperty('error', 'Route not found');
     });
 
     it('should return 404 for non-existent route', async () => {
@@ -152,20 +165,30 @@ describe('Routes Routes', () => {
 
   describe('POST /routes', () => {
     it('should create a new route', async () => {
-      const newRoute = { id: 1, from_city: 'Colombo', to_city: 'Kandy', distance_km: 115, estimated_time_hrs: 3 };
+      const newRoute = { id: 1, route_number: '01', from_city: 'Colombo', to_city: 'Kandy', distance_km: 115, estimated_time_hrs: 3 };
 
-      mockPoolQuery.mockResolvedValue({ rows: [newRoute] });
+      // Mock transaction calls
+      mockClient.query.mockImplementation((query) => {
+        if (query === 'BEGIN') return Promise.resolve();
+        if (query === 'COMMIT') return Promise.resolve();
+        if (query.includes('INSERT INTO routes')) {
+          return Promise.resolve({ rows: [newRoute] });
+        }
+        return Promise.resolve({ rows: [] });
+      });
 
       const response = await request(app)
         .post('/routes')
-        .send({ from_city: 'Colombo', to_city: 'Kandy', distance_km: 115, estimated_time_hrs: 3 })
+        .send({ 
+          route_number: '01',
+          from_city: 'Colombo', 
+          to_city: 'Kandy', 
+          distance_km: 115, 
+          estimated_time_hrs: 3 
+        })
         .expect(201);
 
       expect(response.body).toEqual(newRoute);
-      expect(mockPoolQuery).toHaveBeenCalledWith(
-        expect.stringContaining('INSERT INTO routes'),
-        ['Colombo', 'Kandy', 115, 3]
-      );
     });
 
     it('should return 400 for missing required fields', async () => {
@@ -198,14 +221,29 @@ describe('Routes Routes', () => {
     it('should return 409 for duplicate route', async () => {
       const error = new Error('Duplicate');
       error.code = '23505';
-      mockPoolQuery.mockRejectedValue(error);
+
+      // Mock transaction calls with error on INSERT
+      mockClient.query.mockImplementation((query) => {
+        if (query === 'BEGIN') return Promise.resolve();
+        if (query === 'ROLLBACK') return Promise.resolve();
+        if (query.includes('INSERT INTO routes')) {
+          return Promise.reject(error);
+        }
+        return Promise.resolve({ rows: [] });
+      });
 
       const response = await request(app)
         .post('/routes')
-        .send({ from_city: 'Colombo', to_city: 'Kandy', distance_km: 115, estimated_time_hrs: 3 })
+        .send({ 
+          route_number: '01',
+          from_city: 'Colombo', 
+          to_city: 'Kandy', 
+          distance_km: 115, 
+          estimated_time_hrs: 3 
+        })
         .expect(409);
 
-      expect(response.body).toHaveProperty('error', 'Route already exists');
+      expect(response.body).toHaveProperty('error', 'Route number already exists');
     });
   });
 

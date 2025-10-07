@@ -24,6 +24,10 @@ jest.mock('../../../middleware/auth', () => ({
       return res.status(403).json({ error: 'Forbidden' });
     }
     next();
+  }),
+  validatePermit: jest.fn((req, res, next) => {
+    req.busPermit = 'MOCK_PERMIT_123';
+    next();
   })
 }));
 
@@ -62,7 +66,17 @@ describe('Buses Routes', () => {
   describe('GET /buses', () => {
     it('should return buses with pagination for admin', async () => {
       const mockBuses = [
-        { id: 'BUS001', plate_no: 'ABC123', operator_id: 'op1', capacity: 50, type: 'regular' }
+        { 
+          id: 'BUS001', 
+          plate_no: 'WP-ABC-1234', 
+          permit_number: 'NTC-001-2024',
+          operator_id: 'SLTB01', 
+          operator_type: 'SLTB',
+          capacity: 50, 
+          service_type: 'N',
+          type: 'Normal',
+          is_active: true
+        }
       ];
       mockQuery.mockImplementation((query, values) => {
         if (query.includes('COUNT')) {
@@ -85,12 +99,22 @@ describe('Buses Routes', () => {
       // Mock operator user
       const { authenticate } = require('../../../middleware/auth');
       authenticate.mockImplementation((req, res, next) => {
-        req.user = { id: 2, role: 'operator', operatorId: 'op1' };
+        req.user = { id: 2, role: 'operator', operatorId: 'SLTB01' };
         next();
       });
 
       const mockBuses = [
-        { id: 'BUS001', plate_no: 'ABC123', operator_id: 'op1', capacity: 50, type: 'regular' }
+        { 
+          id: 'BUS001', 
+          plate_no: 'WP-ABC-1234', 
+          permit_number: 'NTC-001-2024',
+          operator_id: 'SLTB01', 
+          operator_type: 'SLTB',
+          capacity: 50, 
+          service_type: 'N',
+          type: 'Normal',
+          is_active: true
+        }
       ];
       mockQuery.mockImplementation((query, values) => {
         if (query.includes('COUNT')) {
@@ -104,8 +128,174 @@ describe('Buses Routes', () => {
         .expect(200);
 
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('WHERE operator_id = $1'),
-        expect.arrayContaining(['op1'])
+        expect.stringContaining('operator_id = $1'),
+        expect.arrayContaining(['SLTB01'])
+      );
+    });
+
+    it('should filter buses by service type', async () => {
+      const mockBuses = [
+        { 
+          id: 'BUS001', 
+          plate_no: 'WP-ABC-1234', 
+          service_type: 'LU',
+          operator_type: 'SLTB',
+          capacity: 50, 
+          type: 'AC Luxury'
+        }
+      ];
+      mockQuery.mockImplementation((query, values) => {
+        if (query.includes('COUNT')) {
+          return Promise.resolve({ rows: [{ count: '1' }] });
+        }
+        return Promise.resolve({ rows: mockBuses });
+      });
+
+      const response = await request(app)
+        .get('/buses?service_type=LU')
+        .expect(200);
+
+      expect(response.body.buses).toEqual(mockBuses);
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('service_type = $'),
+        expect.arrayContaining(['LU'])
+      );
+    });
+
+    it('should filter buses by operator type', async () => {
+      const mockBuses = [
+        { 
+          id: 'BUS001', 
+          operator_type: 'Private',
+          operator_id: 'PVT01',
+          service_type: 'N'
+        }
+      ];
+      mockQuery.mockImplementation((query, values) => {
+        if (query.includes('COUNT')) {
+          return Promise.resolve({ rows: [{ count: '1' }] });
+        }
+        return Promise.resolve({ rows: mockBuses });
+      });
+
+      const response = await request(app)
+        .get('/buses?operator_type=Private')
+        .expect(200);
+
+      expect(response.body.buses).toEqual(mockBuses);
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('operator_type = $'),
+        expect.arrayContaining(['Private'])
+      );
+    });
+
+    it('should filter buses by permit numbers', async () => {
+      const mockBuses = [
+        { 
+          id: 'BUS001', 
+          permit_number: 'NTC-001-2024',
+          operator_id: 'SLTB01'
+        },
+        { 
+          id: 'BUS002', 
+          permit_number: 'NTC-002-2024',
+          operator_id: 'SLTB02'
+        }
+      ];
+      mockQuery.mockImplementation((query, values) => {
+        if (query.includes('COUNT')) {
+          return Promise.resolve({ rows: [{ count: '2' }] });
+        }
+        return Promise.resolve({ rows: mockBuses });
+      });
+
+      const response = await request(app)
+        .get('/buses?permit_number_in=NTC-001-2024,NTC-002-2024')
+        .expect(200);
+
+      expect(response.body.buses).toEqual(mockBuses);
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('permit_number IN'),
+        expect.arrayContaining(['NTC-001-2024', 'NTC-002-2024'])
+      );
+    });
+
+    it('should filter buses by capacity range', async () => {
+      const mockBuses = [
+        { 
+          id: 'BUS001', 
+          capacity: 45,
+          operator_id: 'SLTB01'
+        }
+      ];
+      mockQuery.mockImplementation((query, values) => {
+        if (query.includes('COUNT')) {
+          return Promise.resolve({ rows: [{ count: '1' }] });
+        }
+        return Promise.resolve({ rows: mockBuses });
+      });
+
+      const response = await request(app)
+        .get('/buses?capacity_gt=40&capacity_lt=50')
+        .expect(200);
+
+      expect(response.body.buses).toEqual(mockBuses);
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('capacity > $'),
+        expect.arrayContaining([40, 50])
+      );
+    });
+
+    it('should filter buses by plate number pattern', async () => {
+      const mockBuses = [
+        { 
+          id: 'BUS001', 
+          plate_no: 'WP-ABC-1234',
+          operator_id: 'SLTB01'
+        }
+      ];
+      mockQuery.mockImplementation((query, values) => {
+        if (query.includes('COUNT')) {
+          return Promise.resolve({ rows: [{ count: '1' }] });
+        }
+        return Promise.resolve({ rows: mockBuses });
+      });
+
+      const response = await request(app)
+        .get('/buses?plate_no_like=WP-ABC')
+        .expect(200);
+
+      expect(response.body.buses).toEqual(mockBuses);
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('plate_no ILIKE'),
+        expect.arrayContaining(['%WP-ABC%'])
+      );
+    });
+
+    it('should handle multiple filters simultaneously', async () => {
+      const mockBuses = [
+        { 
+          id: 'BUS001', 
+          service_type: 'LU',
+          operator_type: 'SLTB',
+          capacity: 50
+        }
+      ];
+      mockQuery.mockImplementation((query, values) => {
+        if (query.includes('COUNT')) {
+          return Promise.resolve({ rows: [{ count: '1' }] });
+        }
+        return Promise.resolve({ rows: mockBuses });
+      });
+
+      const response = await request(app)
+        .get('/buses?service_type=LU&operator_type=SLTB&capacity_gt=45')
+        .expect(200);
+
+      expect(response.body.buses).toEqual(mockBuses);
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('service_type = $'),
+        expect.arrayContaining(['LU', 'SLTB', 45])
       );
     });
 
@@ -145,7 +335,24 @@ describe('Buses Routes', () => {
 
   describe('POST /buses', () => {
     it('should create a new bus for admin', async () => {
-      const newBus = { id: 'BUS001', plate_no: 'ABC123', operator_id: 'op1', capacity: 50, type: 'regular' };
+      // Ensure we're testing as admin
+      const { authenticate } = require('../../../middleware/auth');
+      authenticate.mockImplementation((req, res, next) => {
+        req.user = { id: 1, role: 'admin' };
+        next();
+      });
+
+      const newBus = { 
+        id: 'BUS001', 
+        plate_no: 'WP-ABC-1234', 
+        permit_number: 'NTC-001-2024',
+        operator_id: 'SLTB01', 
+        operator_type: 'SLTB',
+        capacity: 50, 
+        service_type: 'N',
+        type: 'Normal',
+        is_active: true
+      };
 
       // Mock the transaction queries
       mockClient.query.mockImplementation((query) => {
@@ -163,7 +370,15 @@ describe('Buses Routes', () => {
 
       const response = await request(app)
         .post('/buses')
-        .send({ plate_no: 'ABC123', operator_id: 'op1', capacity: 50, type: 'regular' })
+        .send({ 
+          plate_no: 'WP-ABC-1234', 
+          permit_number: 'NTC-001-2024',
+          operator_id: 'SLTB01', 
+          operator_type: 'SLTB',
+          capacity: 50, 
+          service_type: 'N',
+          type: 'Normal'
+        })
         .expect(201);
 
       expect(response.body).toEqual(newBus);
@@ -172,11 +387,21 @@ describe('Buses Routes', () => {
     it('should create bus for operator with their operatorId', async () => {
       const { authenticate } = require('../../../middleware/auth');
       authenticate.mockImplementation((req, res, next) => {
-        req.user = { id: 2, role: 'operator', operatorId: 'op1' };
+        req.user = { id: 2, role: 'operator', operatorId: 'SLTB01', operatorType: 'SLTB' };
         next();
       });
 
-      const newBus = { id: 'BUS001', plate_no: 'XYZ789', operator_id: 'op1', capacity: 40, type: 'mini' };
+      const newBus = { 
+        id: 'BUS002', 
+        plate_no: 'WP-XYZ-5678', 
+        permit_number: 'NTC-002-2024',
+        operator_id: 'SLTB01', 
+        operator_type: 'SLTB',
+        capacity: 40, 
+        service_type: 'N',
+        type: 'Normal',
+        is_active: true
+      };
 
       mockClient.query.mockImplementation((query) => {
         if (query === 'BEGIN') return Promise.resolve();
@@ -192,19 +417,61 @@ describe('Buses Routes', () => {
 
       const response = await request(app)
         .post('/buses')
-        .send({ plate_no: 'XYZ789', capacity: 40, type: 'mini' })
+        .send({ 
+          plate_no: 'WP-XYZ-5678', 
+          permit_number: 'NTC-002-2024',
+          operator_type: 'SLTB',
+          capacity: 40, 
+          service_type: 'N',
+          type: 'Normal'
+        })
         .expect(201);
 
-      expect(response.body.operator_id).toBe('op1');
+      expect(response.body.operator_id).toBe('SLTB01');
+      expect(response.body.operator_type).toBe('SLTB');
     });
 
     it('should return 400 for invalid input', async () => {
       const response = await request(app)
         .post('/buses')
-        .send({ plate_no: '', capacity: -1, type: '' })
+        .send({ plate_no: '', capacity: -1, type: '', service_type: 'INVALID' })
         .expect(400);
 
       expect(response.body.error).toContain('Missing or invalid required fields');
+    });
+
+    it('should return 400 for invalid service type', async () => {
+      const response = await request(app)
+        .post('/buses')
+        .send({ 
+          plate_no: 'WP-ABC-1234', 
+          permit_number: 'NTC-001-2024',
+          operator_id: 'SLTB01',
+          operator_type: 'SLTB',
+          capacity: 50, 
+          service_type: 'INVALID',
+          type: 'Normal'
+        })
+        .expect(400);
+
+      expect(response.body.error).toContain('service_type must be N/LU/SE');
+    });
+
+    it('should return 400 for invalid operator type', async () => {
+      const response = await request(app)
+        .post('/buses')
+        .send({ 
+          plate_no: 'WP-ABC-1234', 
+          permit_number: 'NTC-001-2024',
+          operator_id: 'SLTB01',
+          operator_type: 'INVALID',
+          capacity: 50, 
+          service_type: 'N',
+          type: 'Normal'
+        })
+        .expect(400);
+
+      expect(response.body.error).toContain('operator_type must be SLTB/Private');
     });
 
     it('should return 409 for duplicate plate number', async () => {
@@ -225,15 +492,30 @@ describe('Buses Routes', () => {
 
       const response = await request(app)
         .post('/buses')
-        .send({ plate_no: 'DUPLICATE', operator_id: 'op1', capacity: 50, type: 'regular' })
+        .send({ 
+          plate_no: 'DUPLICATE', 
+          permit_number: 'NTC-DUP-2024',
+          operator_id: 'op1', 
+          operator_type: 'SLTB',
+          service_type: 'N',
+          capacity: 50, 
+          type: 'regular' 
+        })
         .expect(409);
 
-      expect(response.body).toHaveProperty('error', 'Bus with this plate number already exists');
+      expect(response.body).toHaveProperty('error', 'Bus already exists with this information');
     });
   });
 
   describe('PUT /buses/:busId', () => {
     it('should update bus capacity and type', async () => {
+      // Ensure we're testing as admin
+      const { authenticate } = require('../../../middleware/auth');
+      authenticate.mockImplementation((req, res, next) => {
+        req.user = { id: 1, role: 'admin' };
+        next();
+      });
+
       const updatedBus = { id: 'BUS001', plate_no: 'ABC123', operator_id: 'op1', capacity: 60, type: 'luxury' };
 
       mockQuery.mockImplementation((query, values) => {
