@@ -68,17 +68,20 @@ describe('Trips Routes', () => {
       ];
 
       mockPoolQuery.mockImplementation((query, values) => {
-        if (query.includes('COUNT(*)')) {
+        if (query.includes('SELECT id FROM routes WHERE route_number')) {
+          return Promise.resolve({ rows: [{ id: 1 }] });
+        }
+        if (query.includes('COUNT(DISTINCT t.id)')) {
           return Promise.resolve({ rows: [{ count: '1' }] });
         }
-        if (query.includes('SELECT t.*')) {
+        if (query.includes('SELECT DISTINCT t.*')) {
           return Promise.resolve({ rows: mockTrips });
         }
         return Promise.resolve({ rows: [] });
       });
 
       const response = await request(app)
-        .get('/trips/routes/1/trips?page=1&limit=20')
+        .get('/trips/routes/138/trips?page=1&limit=20')
         .expect(200);
 
       expect(response.body).toHaveProperty('trips', mockTrips);
@@ -89,17 +92,20 @@ describe('Trips Routes', () => {
 
     it('should filter trips by date range', async () => {
       mockPoolQuery.mockImplementation((query, values) => {
-        if (query.includes('COUNT(*)')) {
+        if (query.includes('SELECT id FROM routes WHERE route_number')) {
+          return Promise.resolve({ rows: [{ id: 1 }] });
+        }
+        if (query.includes('COUNT(DISTINCT t.id)')) {
           return Promise.resolve({ rows: [{ count: '0' }] });
         }
-        if (query.includes('SELECT t.*')) {
+        if (query.includes('SELECT DISTINCT t.*')) {
           return Promise.resolve({ rows: [] });
         }
         return Promise.resolve({ rows: [] });
       });
 
       const response = await request(app)
-        .get('/trips/routes/1/trips?startDate=2025-10-01T00:00:00Z&endDate=2025-10-03T00:00:00Z')
+        .get('/trips/routes/138/trips?startDate=2025-10-01T00:00:00Z&endDate=2025-10-03T00:00:00Z')
         .expect(200);
 
       expect(mockPoolQuery).toHaveBeenCalledWith(
@@ -130,8 +136,21 @@ describe('Trips Routes', () => {
         return Promise.resolve({ rows: [] });
       });
 
+      mockPoolQuery.mockImplementation((query, values) => {
+        if (query.includes('SELECT id FROM routes WHERE route_number')) {
+          return Promise.resolve({ rows: [{ id: 1 }] });
+        }
+        if (query.includes('COUNT(DISTINCT t.id)')) {
+          return Promise.resolve({ rows: [{ count: '0' }] });
+        }
+        if (query.includes('SELECT DISTINCT t.*')) {
+          return Promise.resolve({ rows: [] });
+        }
+        return Promise.resolve({ rows: [] });
+      });
+
       const response = await request(app)
-        .get('/trips/routes/1/trips')
+        .get('/trips/routes/138/trips')
         .expect(200);
 
       expect(mockPoolQuery).toHaveBeenCalledWith(
@@ -140,12 +159,12 @@ describe('Trips Routes', () => {
       );
     });
 
-    it('should return 400 for invalid routeId', async () => {
+    it('should return 400 for invalid routeNumber', async () => {
       const response = await request(app)
-        .get('/trips/routes/0/trips')
+        .get('/trips/routes/ /trips')
         .expect(400);
 
-      expect(response.body).toHaveProperty('error', 'Invalid route ID');
+      expect(response.body).toHaveProperty('error', 'Invalid route number');
     });
 
     it('should sanitize pagination parameters', async () => {
@@ -159,8 +178,21 @@ describe('Trips Routes', () => {
         return Promise.resolve({ rows: [] });
       });
 
+      mockPoolQuery.mockImplementation((query, values) => {
+        if (query.includes('SELECT id FROM routes WHERE route_number')) {
+          return Promise.resolve({ rows: [{ id: 1 }] });
+        }
+        if (query.includes('COUNT(DISTINCT t.id)')) {
+          return Promise.resolve({ rows: [{ count: '0' }] });
+        }
+        if (query.includes('SELECT DISTINCT t.*')) {
+          return Promise.resolve({ rows: [] });
+        }
+        return Promise.resolve({ rows: [] });
+      });
+
       const response = await request(app)
-        .get('/trips/routes/1/trips?page=-1&limit=200')
+        .get('/trips/routes/138/trips?page=-1&limit=200')
         .expect(200);
 
       expect(response.body.page).toBe(1);
@@ -225,11 +257,11 @@ describe('Trips Routes', () => {
 
       // Mock bus and route existence
       mockPoolQuery.mockImplementation((query, values) => {
-        if (query.includes('SELECT operator_id FROM buses')) {
-          return Promise.resolve({ rows: [{ operator_id: 'admin' }] });
+        if (query.includes('SELECT operator_id, service_type FROM buses')) {
+          return Promise.resolve({ rows: [{ operator_id: 'admin', service_type: 'N' }] });
         }
-        if (query.includes('SELECT estimated_time_hrs FROM routes')) {
-          return Promise.resolve({ rows: [{ estimated_time_hrs: 3 }] });
+        if (query.includes('SELECT id, estimated_time_hrs FROM routes')) {
+          return Promise.resolve({ rows: [{ id: 1, estimated_time_hrs: 3 }] });
         }
         return Promise.resolve({ rows: [] });
       });
@@ -244,12 +276,21 @@ describe('Trips Routes', () => {
         if (query.includes('INSERT INTO trips')) {
           return Promise.resolve({ rows: [newTrip] });
         }
+        if (query.includes('SELECT id, segment_order')) {
+          return Promise.resolve({ rows: [] }); // No segments
+        }
         return Promise.resolve();
       });
 
       const response = await request(app)
         .post('/trips')
-        .send({ bus_id: 'BUS001', route_id: 1, departure_time: '2025-10-02T10:00:00Z' })
+        .send({ 
+          bus_id: 'BUS001', 
+          route_number: '138', 
+          direction: 'outbound',
+          service_type: 'N',
+          departure_time: '2025-10-02T10:00:00Z' 
+        })
         .expect(201);
 
       expect(response.body).toEqual(newTrip);
@@ -273,11 +314,11 @@ describe('Trips Routes', () => {
       };
 
       mockPoolQuery.mockImplementation((query, values) => {
-        if (query.includes('SELECT operator_id FROM buses')) {
-          return Promise.resolve({ rows: [{ operator_id: 'op1' }] }); // Operator owns the bus
+        if (query.includes('SELECT operator_id, service_type FROM buses')) {
+          return Promise.resolve({ rows: [{ operator_id: 'op1', service_type: 'N' }] }); // Operator owns the bus
         }
-        if (query.includes('SELECT estimated_time_hrs FROM routes')) {
-          return Promise.resolve({ rows: [{ estimated_time_hrs: 3 }] });
+        if (query.includes('SELECT id, estimated_time_hrs FROM routes')) {
+          return Promise.resolve({ rows: [{ id: 1, estimated_time_hrs: 3 }] });
         }
         return Promise.resolve({ rows: [] });
       });
@@ -291,12 +332,21 @@ describe('Trips Routes', () => {
         if (query.includes('INSERT INTO trips')) {
           return Promise.resolve({ rows: [newTrip] });
         }
+        if (query.includes('SELECT id, segment_order')) {
+          return Promise.resolve({ rows: [] }); // No segments
+        }
         return Promise.resolve();
       });
 
       const response = await request(app)
         .post('/trips')
-        .send({ bus_id: 'BUS001', route_id: 1, departure_time: '2025-10-02T10:00:00Z' })
+        .send({ 
+          bus_id: 'BUS001', 
+          route_number: '138', 
+          direction: 'outbound',
+          service_type: 'N',
+          departure_time: '2025-10-02T10:00:00Z' 
+        })
         .expect(201);
 
       expect(response.body.bus_id).toBe('BUS001');
@@ -305,7 +355,7 @@ describe('Trips Routes', () => {
     it('should return 400 for invalid input', async () => {
       const response = await request(app)
         .post('/trips')
-        .send({ bus_id: '', route_id: -1, departure_time: 'invalid' })
+        .send({ bus_id: '', route_number: '', departure_time: 'invalid' })
         .expect(400);
 
       expect(response.body.error).toContain('Missing or invalid required fields');
@@ -316,7 +366,13 @@ describe('Trips Routes', () => {
 
       const response = await request(app)
         .post('/trips')
-        .send({ bus_id: 'BUS999', route_id: 1, departure_time: '2025-10-02T10:00:00Z' })
+        .send({ 
+          bus_id: 'BUS999', 
+          route_number: '138', 
+          direction: 'outbound',
+          service_type: 'N',
+          departure_time: '2025-10-02T10:00:00Z' 
+        })
         .expect(404);
 
       expect(response.body).toHaveProperty('error', 'Bus not found');
@@ -324,10 +380,10 @@ describe('Trips Routes', () => {
 
     it('should return 404 for non-existent route', async () => {
       mockPoolQuery.mockImplementation((query, values) => {
-        if (query.includes('SELECT operator_id FROM buses')) {
-          return Promise.resolve({ rows: [{ operator_id: 'admin' }] });
+        if (query.includes('SELECT operator_id, service_type FROM buses')) {
+          return Promise.resolve({ rows: [{ operator_id: 'admin', service_type: 'N' }] });
         }
-        if (query.includes('SELECT estimated_time_hrs FROM routes')) {
+        if (query.includes('SELECT id, estimated_time_hrs FROM routes')) {
           return Promise.resolve({ rows: [] }); // No route found
         }
         return Promise.resolve({ rows: [] });
@@ -335,7 +391,13 @@ describe('Trips Routes', () => {
 
       const response = await request(app)
         .post('/trips')
-        .send({ bus_id: 'BUS001', route_id: 999, departure_time: '2025-10-02T10:00:00Z' })
+        .send({ 
+          bus_id: 'BUS001', 
+          route_number: '999', 
+          direction: 'outbound',
+          service_type: 'N',
+          departure_time: '2025-10-02T10:00:00Z' 
+        })
         .expect(404);
 
       expect(response.body).toHaveProperty('error', 'Route not found');
@@ -350,15 +412,21 @@ describe('Trips Routes', () => {
       });
 
       mockPoolQuery.mockImplementation((query, values) => {
-        if (query.includes('SELECT operator_id FROM buses')) {
-          return Promise.resolve({ rows: [{ operator_id: 'op2' }] }); // Different operator
+        if (query.includes('SELECT operator_id, service_type FROM buses')) {
+          return Promise.resolve({ rows: [{ operator_id: 'op2', service_type: 'N' }] }); // Different operator
         }
         return Promise.resolve({ rows: [] });
       });
 
       const response = await request(app)
         .post('/trips')
-        .send({ bus_id: 'BUS001', route_id: 1, departure_time: '2025-10-02T10:00:00Z' })
+        .send({ 
+          bus_id: 'BUS001', 
+          route_number: '138', 
+          direction: 'outbound',
+          service_type: 'N',
+          departure_time: '2025-10-02T10:00:00Z' 
+        })
         .expect(403);
 
       expect(response.body).toHaveProperty('error', 'Unauthorized: You do not own this bus');
@@ -366,11 +434,11 @@ describe('Trips Routes', () => {
 
     it('should return 409 for duplicate trip', async () => {
       mockPoolQuery.mockImplementation((query, values) => {
-        if (query.includes('SELECT operator_id FROM buses')) {
-          return Promise.resolve({ rows: [{ operator_id: 'admin' }] });
+        if (query.includes('SELECT operator_id, service_type FROM buses')) {
+          return Promise.resolve({ rows: [{ operator_id: 'admin', service_type: 'N' }] });
         }
-        if (query.includes('SELECT estimated_time_hrs FROM routes')) {
-          return Promise.resolve({ rows: [{ estimated_time_hrs: 3 }] });
+        if (query.includes('SELECT id, estimated_time_hrs FROM routes')) {
+          return Promise.resolve({ rows: [{ id: 1, estimated_time_hrs: 3 }] });
         }
         return Promise.resolve({ rows: [] });
       });
@@ -387,12 +455,21 @@ describe('Trips Routes', () => {
           error.code = '23505';
           return Promise.reject(error);
         }
+        if (query.includes('SELECT id, segment_order')) {
+          return Promise.resolve({ rows: [] }); // No segments
+        }
         return Promise.resolve();
       });
 
       const response = await request(app)
         .post('/trips')
-        .send({ bus_id: 'BUS001', route_id: 1, departure_time: '2025-10-02T10:00:00Z' })
+        .send({ 
+          bus_id: 'BUS001', 
+          route_number: '138', 
+          direction: 'outbound',
+          service_type: 'N',
+          departure_time: '2025-10-02T10:00:00Z' 
+        })
         .expect(409);
 
       expect(response.body).toHaveProperty('error', 'Trip with this bus and departure time already exists');
