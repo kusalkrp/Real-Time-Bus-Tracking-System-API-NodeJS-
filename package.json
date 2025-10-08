@@ -11,7 +11,9 @@
     "test:integration": "node tests/check-docker-services.js && jest --config jest.integration.config.js",
     "test:performance": "artillery run tests/performance/load-test.yml",
     "test:performance:quick": "node tests/performance/quick-performance-test.js",
-    "test:all": "npm run test:coverage && echo 'Note: Start Docker services with docker-compose up before running integration tests' && npm run test:integration && npm run test:performance:quick"
+    "test:all": "node run-all-tests.js",
+    "test:unit:watch": "jest --watch",
+    "test:docker": "node tests/check-docker-services.js"
   },
   "dependencies": {
     "express": "^4.18.2",

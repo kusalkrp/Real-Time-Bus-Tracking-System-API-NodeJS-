@@ -10,7 +10,7 @@ describe('API Integration Tests', () => {
   beforeAll(async () => {
     // Get authentication tokens from the running API in Docker
     adminToken = await getAuthToken('admin@ntc.gov.lk', 'adminpass');
-    operatorToken = await getAuthToken('operator1@example.com', 'oppass');
+    operatorToken = await getAuthToken('sltb01@sltb.lk', 'sltb01pass');
     commuterToken = await getAuthToken('commuter1@example.com', 'commuterpass');
   });
 
@@ -35,14 +35,41 @@ describe('API Integration Tests', () => {
       expect(response.body).toHaveProperty('role', 'admin');
     });
 
-    test('should login operator user', async () => {
+    test('should login SLTB operator user', async () => {
       const response = await request(API_BASE_URL)
         .post('/auth/login')
-        .send({ email: 'operator1@example.com', password: 'oppass' })
+        .send({ email: 'sltb01@sltb.lk', password: 'sltb01pass' })
         .expect(200);
 
       expect(response.body).toHaveProperty('token');
       expect(response.body).toHaveProperty('role', 'operator');
+      expect(response.body).toHaveProperty('operatorId', 'SLTB01');
+      expect(response.body).toHaveProperty('operatorType', 'SLTB');
+    });
+
+    test('should login Private operator user', async () => {
+      const response = await request(API_BASE_URL)
+        .post('/auth/login')
+        .send({ email: 'pvt01@private.lk', password: 'pvt01pass' })
+        .expect(200);
+
+      expect(response.body).toHaveProperty('token');
+      expect(response.body).toHaveProperty('role', 'operator');
+      expect(response.body).toHaveProperty('operatorId', 'PVT01');
+      expect(response.body).toHaveProperty('operatorType', 'Private');
+    });
+
+    test('should enable permit validation for operators', async () => {
+      const response = await request(API_BASE_URL)
+        .post('/auth/login')
+        .send({ 
+          email: 'sltb01@sltb.lk', 
+          password: 'sltb01pass',
+          permit_validation: true 
+        })
+        .expect(200);
+
+      expect(response.body).toHaveProperty('permit_validation_enabled', true);
     });
 
     test('should reject invalid credentials', async () => {
@@ -69,6 +96,7 @@ describe('API Integration Tests', () => {
 
     test('should create new route as admin', async () => {
       const newRoute = {
+        route_number: '99',
         from_city: 'Jaffna',
         to_city: 'Colombo',
         distance_km: 400,
@@ -105,16 +133,19 @@ describe('API Integration Tests', () => {
       expect(Array.isArray(response.body.buses)).toBe(true);
       // Should only return buses owned by this operator
       response.body.buses.forEach(bus => {
-        expect(bus.operator_id).toBe('op1');
+        expect(bus.operator_id).toBe('SLTB01');
       });
     });
 
     test('should create bus as admin', async () => {
       const newBus = {
-        plate_no: 'NEW123',
-        operator_id: 'op1',
+        plate_no: 'WP-NEW-9999',
+        permit_number: 'NTC-TEST-2024',
+        operator_id: 'SLTB01',
+        operator_type: 'SLTB',
         capacity: 45,
-        type: 'luxury'
+        service_type: 'LU',
+        type: 'AC Luxury'
       };
 
       const response = await request(API_BASE_URL)
@@ -125,17 +156,54 @@ describe('API Integration Tests', () => {
 
       expect(response.body).toHaveProperty('id');
       expect(response.body.plate_no).toBe(newBus.plate_no);
+      expect(response.body.permit_number).toBe(newBus.permit_number);
       expect(response.body.capacity).toBe(newBus.capacity);
+      expect(response.body.service_type).toBe(newBus.service_type);
+      expect(response.body.operator_type).toBe(newBus.operator_type);
     });
 
-    test('should reject bus creation for operator with different operator_id', async () => {
+    test('should create bus for operator with automatic operator assignment', async () => {
+      const newBus = {
+        plate_no: 'WP-OP-TEST-1',
+        permit_number: 'NTC-OP-TEST-2024',
+        capacity: 50,
+        service_type: 'N',
+        type: 'Normal'
+      };
+
       const response = await request(API_BASE_URL)
         .post('/buses')
         .set('Authorization', `Bearer ${operatorToken}`)
-        .send({ plate_no: 'INVALID', operator_id: 'op2', capacity: 50, type: 'regular' })
-        .expect(400);
+        .send(newBus)
+        .expect(201);
 
-      expect(response.body.error).toContain('operator_id is required for admin users');
+      expect(response.body.operator_id).toBe('SLTB01');
+      expect(response.body.operator_type).toBe('SLTB');
+      expect(response.body.plate_no).toBe(newBus.plate_no);
+    });
+
+    test('should filter buses by service type', async () => {
+      const response = await request(API_BASE_URL)
+        .get('/buses?service_type=LU')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(Array.isArray(response.body.buses)).toBe(true);
+      response.body.buses.forEach(bus => {
+        expect(bus.service_type).toBe('LU');
+      });
+    });
+
+    test('should filter buses by operator type', async () => {
+      const response = await request(API_BASE_URL)
+        .get('/buses?operator_type=SLTB')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(Array.isArray(response.body.buses)).toBe(true);
+      response.body.buses.forEach(bus => {
+        expect(bus.operator_type).toBe('SLTB');
+      });
     });
   });
 
@@ -155,6 +223,7 @@ describe('API Integration Tests', () => {
       const newTrip = {
         bus_id: 'BUS001',
         route_id: 1,
+        direction: 'outbound',
         departure_time: '2025-10-06T09:00:00Z'
       };
 
@@ -166,6 +235,7 @@ describe('API Integration Tests', () => {
 
       expect(response.body).toHaveProperty('id');
       expect(response.body.bus_id).toBe(newTrip.bus_id);
+      expect(response.body.direction).toBe(newTrip.direction);
       expect(response.body.status).toBe('Scheduled');
       expect(response.body).toHaveProperty('arrival_time');
     });
@@ -225,6 +295,7 @@ describe('API Integration Tests', () => {
         .post('/routes')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          route_number: '98',
           from_city: 'Matara',
           to_city: 'Colombo',
           distance_km: 160,

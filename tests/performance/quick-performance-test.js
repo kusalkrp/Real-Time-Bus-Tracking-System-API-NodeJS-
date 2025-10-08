@@ -20,14 +20,38 @@ async function runPerformanceTests() {
     }),
     connections: 10,
     duration: 10,
-    title: 'Auth Login'
+    title: 'Auth Login - Commuter'
   });
 
-  console.log('✅ Auth Login Results:');
+  // Test 1b: SLTB Operator Authentication
+  console.log('📊 Testing SLTB Operator Authentication...');
+  const sltbAuthResult = await run({
+    url: 'http://localhost:3000/auth/login',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      email: 'sltb01@sltb.lk',
+      password: 'sltb01pass',
+      permit_validation: true
+    }),
+    connections: 10,
+    duration: 10,
+    title: 'Auth Login - SLTB Operator with Permit Validation'
+  });
+
+  console.log('✅ Commuter Auth Results:');
   console.log(`   Requests/sec: ${authResult.requests.average}`);
   console.log(`   Latency (avg): ${authResult.latency.average}ms`);
   console.log(`   Latency (p95): ${authResult.latency.p95}ms`);
   console.log(`   Errors: ${authResult.errors}\n`);
+
+  console.log('✅ SLTB Operator Auth Results:');
+  console.log(`   Requests/sec: ${sltbAuthResult.requests.average}`);
+  console.log(`   Latency (avg): ${sltbAuthResult.latency.average}ms`);
+  console.log(`   Latency (p95): ${sltbAuthResult.latency.p95}ms`);
+  console.log(`   Errors: ${sltbAuthResult.errors}\n`);
 
   // Test 2: Routes endpoint (with auth)
   console.log('📊 Testing Routes Endpoint...');
@@ -48,6 +72,44 @@ async function runPerformanceTests() {
   console.log(`   Latency (p95): ${routesResult.latency.p95}ms`);
   console.log(`   Errors: ${routesResult.errors}\n`);
 
+  // Test 2b: Advanced Bus Filtering
+  console.log('📊 Testing Advanced Bus Filtering...');
+  const busFilterResult = await run({
+    url: 'http://localhost:3000/buses?service_type=LU&operator_type=SLTB&capacity_gt=40&capacity_lt=60',
+    method: 'GET',
+    headers: {
+      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTYzNjkzNjAwMCwiZXhwIjoxNjM3NTQwODAwfQ.test_token'
+    },
+    connections: 25,
+    duration: 15,
+    title: 'Advanced Bus Filtering'
+  });
+
+  console.log('✅ Bus Filtering Results:');
+  console.log(`   Requests/sec: ${busFilterResult.requests.average}`);
+  console.log(`   Latency (avg): ${busFilterResult.latency.average}ms`);
+  console.log(`   Latency (p95): ${busFilterResult.latency.p95}ms`);
+  console.log(`   Errors: ${busFilterResult.errors}\n`);
+
+  // Test 2c: Permit Number Filtering
+  console.log('📊 Testing Permit Number Filtering...');
+  const permitFilterResult = await run({
+    url: 'http://localhost:3000/buses?permit_number_in=NTC-001-2024,NTC-002-2024,NTC-003-2024',
+    method: 'GET',
+    headers: {
+      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTYzNjkzNjAwMCwiZXhwIjoxNjM3NTQwODAwfQ.test_token'
+    },
+    connections: 20,
+    duration: 12,
+    title: 'Permit Filtering'
+  });
+
+  console.log('✅ Permit Filtering Results:');
+  console.log(`   Requests/sec: ${permitFilterResult.requests.average}`);
+  console.log(`   Latency (avg): ${permitFilterResult.latency.average}ms`);
+  console.log(`   Latency (p95): ${permitFilterResult.latency.p95}ms`);
+  console.log(`   Errors: ${permitFilterResult.errors}\n`);
+
   // Test 3: Location tracking endpoint
   console.log('📊 Testing Location Tracking Endpoint...');
   const locationResult = await run({
@@ -67,8 +129,8 @@ async function runPerformanceTests() {
   console.log(`   Latency (p95): ${locationResult.latency.p95}ms`);
   console.log(`   Errors: ${locationResult.errors}\n`);
 
-  // Test 4: Mixed workload simulation
-  console.log('📊 Testing Mixed Workload...');
+  // Test 4: Mixed workload simulation (NTC-compliant operations)
+  console.log('📊 Testing Mixed NTC Workload...');
   const mixedResult = await run({
     url: 'http://localhost:3000',
     connections: 50,
@@ -86,21 +148,40 @@ async function runPerformanceTests() {
         })
       },
       {
+        method: 'POST',
+        path: '/auth/login',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: 'sltb01@sltb.lk',
+          password: 'sltb01pass',
+          permit_validation: true
+        })
+      },
+      {
         method: 'GET',
-        path: '/routes',
+        path: '/routes?page=1&limit=10',
         headers: {
           'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJjb21tdXRlcjEiLCJyb2xlIjoiY29tbXV0ZXIiLCJpYXQiOjE2MzY5MzYwMDAsImV4cCI6MTYzNzU0MDgwMH0.test_token'
         }
       },
       {
         method: 'GET',
-        path: '/trips/routes/1/trips',
+        path: '/buses?service_type=N&operator_type=SLTB',
+        headers: {
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJjb21tdXRlcjEiLCJyb2xlIjoiY29tbXV0ZXIiLCJpYXQiOjE2MzY5MzYwMDAsImV4cCI6MTYzNzU0MDgwMH0.test_token'
+        }
+      },
+      {
+        method: 'GET',
+        path: '/trips/routes/1/trips?direction=outbound',
         headers: {
           'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJjb21tdXRlcjEiLCJyb2xlIjoiY29tbXV0ZXIiLCJpYXQiOjE2MzY5MzYwMDAsImV4cCI6MTYzNzU0MDgwMH0.test_token'
         }
       }
     ],
-    title: 'Mixed Workload'
+    title: 'Mixed NTC Workload'
   });
 
   console.log('✅ Mixed Workload Results:');

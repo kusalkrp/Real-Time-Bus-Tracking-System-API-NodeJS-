@@ -18,14 +18,18 @@ function checkDockerServices() {
     // Check if docker-compose services are running
     const output = execSync('docker-compose ps', { encoding: 'utf8' });
 
-    const services = ['bus_tracking_db', 'bus_tracking_redis', 'bus_tracking_api'];
+    const services = [
+      { name: 'bus_tracking_db', description: 'PostgreSQL Database' },
+      { name: 'bus_tracking_redis', description: 'Redis Cache' },
+      { name: 'bus_tracking_api', description: 'Node.js API Server' }
+    ];
     let allRunning = true;
 
     services.forEach(service => {
-      if (output.includes(service) && output.includes('Up')) {
-        console.log(`✅ ${service} is running`);
+      if (output.includes(service.name) && output.includes('Up')) {
+        console.log(`✅ ${service.name} (${service.description}) is running`);
       } else {
-        console.log(`❌ ${service} is not running`);
+        console.log(`❌ ${service.name} (${service.description}) is not running`);
         allRunning = false;
       }
     });
@@ -37,7 +41,15 @@ function checkDockerServices() {
     }
 
     console.log('\n🎉 All Docker services are running!');
-    console.log('🚀 You can now run integration tests with: npm run test:integration');
+    console.log('� Service Status Summary:');
+    console.log('   • PostgreSQL 15 with NTC-compliant schema');
+    console.log('   • Redis 7 for caching and sessions');
+    console.log('   • Node.js API with role-based authentication');
+    console.log('');
+    console.log('🚀 You can now run tests:');
+    console.log('   npm run test            - Unit tests');
+    console.log('   npm run test:integration - Integration tests');
+    console.log('   npm run test:coverage   - Coverage report');
 
   } catch (error) {
     console.error('❌ Failed to check docker-compose services');
