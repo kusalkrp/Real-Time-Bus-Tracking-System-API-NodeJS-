@@ -1,0 +1,78 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - release-V1.0
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    environment: production
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Test SSH Connection
+        run: |
+          ssh -o ConnectTimeout=10 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "echo 'SSH connection successful'"
+
+      - name: Deploy to EC2
+        run: |
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
+            echo "🚀 Starting deployment..."
+            
+            cd ~/bus-tracking || { echo "❌ Project directory not found"; exit 1; }
+            
+            echo "📥 Pulling latest changes..."
+            git pull origin release-V1.0
+            
+            echo "🛑 Stopping existing containers..."
+            docker-compose down
+            
+            echo "️ Removing database volume to force migration..."
+            docker-compose down -v
+            
+            echo "🏗️ Building and starting containers..."
+            docker-compose up -d --build
+            
+            echo "⏳ Waiting for services to start..."
+            sleep 50
+            
+            echo "🔍 Checking container status..."
+            docker-compose ps
+            
+
+            
+            echo "🎉 Deployment completed successfully!"
+          EOF
+
+      - name: Health Check
+        run: |
+          echo "🏥 Running health check..."
+          sleep 20  # extra wait for Traefik and HTTPS
+          
+          response=$(curl -sk -o /dev/null -w "%{http_code}" https://busapi.duckdns.org/health || echo "000")
+          
+          if [ "$response" = "200" ]; then
+            echo "✅ Health check passed - API is responding"
+          else
+            echo "❌ Health check failed - API returned status: $response"
+            exit 1
+          fi
+
+      - name: Cleanup SSH
+        if: always()
+        run: |
+          rm -f ~/.ssh/id_rsa
