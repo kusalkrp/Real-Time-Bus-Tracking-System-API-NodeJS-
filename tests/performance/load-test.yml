@@ -1,0 +1,115 @@
+config:
+  target: 'http://localhost:3000'
+  phases:
+    # Warm-up phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm-up"
+    # Load testing phase
+    - duration: 300
+      arrivalRate: 20
+      name: "Load Test"
+    # Stress testing phase
+    - duration: 120
+      arrivalRate: 50
+      name: "Stress Test"
+  defaults:
+    headers:
+      Content-Type: 'application/json'
+
+scenarios:
+  - name: "Authentication Flow"
+    weight: 10
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "commuter1@example.com"
+            password: "commuterpass"
+          capture:
+            json: "$.token"
+            as: "auth_token"
+      - get:
+          url: "/routes"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+
+  - name: "Route Operations"
+    weight: 25
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "commuter1@example.com"
+            password: "commuterpass"
+          capture:
+            json: "$.token"
+            as: "auth_token"
+      - get:
+          url: "/routes"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+      - get:
+          url: "/routes/1"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+
+  - name: "Bus Operations"
+    weight: 20
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "operator1@example.com"
+            password: "oppass"
+          capture:
+            json: "$.token"
+            as: "auth_token"
+      - get:
+          url: "/buses"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+      - get:
+          url: "/buses/BUS001"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+
+  - name: "Trip Operations"
+    weight: 25
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "commuter1@example.com"
+            password: "commuterpass"
+          capture:
+            json: "$.token"
+            as: "auth_token"
+      - get:
+          url: "/trips/routes/1/trips"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+      - get:
+          url: "/trips/TRIP001"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+
+  - name: "Location Tracking"
+    weight: 20
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "commuter1@example.com"
+            password: "commuterpass"
+          capture:
+            json: "$.token"
+            as: "auth_token"
+      - get:
+          url: "/locations/trips/TRIP001/location"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+      - get:
+          url: "/locations/buses/BUS001/locations/history"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
