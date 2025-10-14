@@ -6,7 +6,6 @@ console.log('Starting app.js');
 
 // Import configurations and middleware
 const { redisClient } = require('./config/database');
-const { apiLimiter, authLimiter } = require('./middleware/rateLimit');
 
 console.log('Database config imported');
 
@@ -22,10 +21,6 @@ console.log('All routes imported successfully');
 
 const app = express();
 app.use(bodyParser.json());
-
-// Apply rate limiting
-app.use('/auth', authLimiter); // Stricter limits for auth endpoints
-app.use(apiLimiter); // General rate limiting for all other endpoints
 
 // Routes
 app.use('/auth', authRoutes);
