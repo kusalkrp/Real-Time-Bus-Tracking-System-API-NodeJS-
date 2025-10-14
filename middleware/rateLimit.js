@@ -5,10 +5,7 @@ const { redisClient } = require('../config/database');
 // Rate limiter using Redis store
 const createRateLimiter = (windowMs = 15 * 60 * 1000, max = 100, message = 'Too many requests from this IP, please try again later.') => {
   return rateLimit({
-    // store: new RedisStore({
-    //   client: redisClient,
-    //   prefix: 'rate-limit:',
-    // }),
+
     windowMs, // Time window in milliseconds
     max, // Limit each IP to 'max' requests per windowMs
     message: {
