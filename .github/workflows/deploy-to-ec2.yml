@@ -44,6 +44,9 @@ jobs:
             echo "️ Removing database volume to force migration..."
             docker-compose down -v
             
+            echo "🧹 Cleaning up old Docker data..."
+            docker system prune -af --volumes || true
+
             echo "🏗️ Building and starting containers..."
             docker-compose up -d --build
             
