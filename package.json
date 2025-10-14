@@ -5,19 +5,34 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "test:integration": "node tests/check-docker-services.js && jest --config jest.integration.config.js",
+    "test:performance": "artillery run tests/performance/load-test.yml",
+    "test:performance:quick": "node tests/performance/quick-performance-test.js",
+    "test:all": "npm run test:coverage && echo 'Note: Start Docker services with docker-compose up before running integration tests' && npm run test:integration && npm run test:performance:quick"
   },
   "dependencies": {
     "express": "^4.18.2",
     "body-parser": "^1.20.2",
     "jsonwebtoken": "^9.0.2",
-    "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
     "pg": "^8.11.3",
     "redis": "^4.6.10",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "express-rate-limit": "^7.1.5"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "nodemon": "^3.0.1",
+    "artillery": "^2.0.8",
+    "autocannon": "^7.15.0",
+    "testcontainers": "^10.7.2",
+    "pgtools": "^1.0.0",
+    "redis-mock": "^0.56.3",
+    "faker": "^6.6.6"
   },
   "keywords": [
     "nodejs",
