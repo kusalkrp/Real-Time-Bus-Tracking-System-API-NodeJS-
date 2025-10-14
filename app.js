@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 
 console.log('Starting app.js');
 
-// Import configurations and middleware to app.js
+// Import configurations and middleware 
 const { redisClient } = require('./config/database');
 const { apiLimiter, authLimiter } = require('./middleware/rateLimit');
 
