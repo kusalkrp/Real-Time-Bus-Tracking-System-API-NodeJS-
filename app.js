@@ -23,6 +23,9 @@ console.log('All routes imported successfully');
 const app = express();
 app.use(bodyParser.json());
 
+// Trust reverse proxy for correct IP handling
+app.set('trust proxy', 1); // <-- ADD THIS LINE
+
 // Apply rate limiting
 app.use('/auth', authLimiter); // Stricter limits for auth endpoints
 app.use(apiLimiter); // General rate limiting for all other endpoints
