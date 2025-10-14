@@ -1,0 +1,739 @@
+{
+  "routes": [
+    {
+      "id": "R001",
+      "route_number": "01",
+      "from_city": "Colombo",
+      "to_city": "Kandy",
+      "distance_km": 115,
+      "estimated_time_hrs": 3.5,
+      "segments": [
+        {
+          "segment_order": 1,
+          "from_location": "Colombo",
+          "to_location": "Peradeniya",
+          "distance_km": 85,
+          "estimated_time_minutes": 150
+        },
+        {
+          "segment_order": 2,
+          "from_location": "Peradeniya",
+          "to_location": "Kadugannawa",
+          "distance_km": 15,
+          "estimated_time_minutes": 30
+        },
+        {
+          "segment_order": 3,
+          "from_location": "Kadugannawa",
+          "to_location": "Kandy",
+          "distance_km": 15,
+          "estimated_time_minutes": 30
+        }
+      ]
+    },
+    {
+      "id": "R002",
+      "route_number": "02",
+      "from_city": "Colombo",
+      "to_city": "Negombo",
+      "distance_km": 35,
+      "estimated_time_hrs": 1.0,
+      "segments": [
+        {
+          "segment_order": 1,
+          "from_location": "Colombo",
+          "to_location": "Negombo",
+          "distance_km": 35,
+          "estimated_time_minutes": 60
+        }
+      ]
+    },
+    {
+      "id": "R003",
+      "route_number": "04",
+      "from_city": "Colombo",
+      "to_city": "Avissawella",
+      "distance_km": 55,
+      "estimated_time_hrs": 1.5,
+      "segments": [
+        {
+          "segment_order": 1,
+          "from_location": "Colombo",
+          "to_location": "Avissawella",
+          "distance_km": 55,
+          "estimated_time_minutes": 90
+        }
+      ]
+    },
+    {
+      "id": "R004",
+      "route_number": "08",
+      "from_city": "Colombo",
+      "to_city": "Matale",
+      "distance_km": 145,
+      "estimated_time_hrs": 4.0,
+      "segments": [
+        {
+          "segment_order": 1,
+          "from_location": "Colombo",
+          "to_location": "Peradeniya",
+          "distance_km": 85,
+          "estimated_time_minutes": 150
+        },
+        {
+          "segment_order": 2,
+          "from_location": "Peradeniya",
+          "to_location": "Kadugannawa",
+          "distance_km": 15,
+          "estimated_time_minutes": 30
+        },
+        {
+          "segment_order": 3,
+          "from_location": "Kadugannawa",
+          "to_location": "Mawanela",
+          "distance_km": 25,
+          "estimated_time_minutes": 45
+        },
+        {
+          "segment_order": 4,
+          "from_location": "Mawanela",
+          "to_location": "Matale",
+          "distance_km": 20,
+          "estimated_time_minutes": 35
+        }
+      ]
+    },
+    {
+      "id": "R005",
+      "route_number": "15",
+      "from_city": "Colombo",
+      "to_city": "Kalutara",
+      "distance_km": 45,
+      "estimated_time_hrs": 1.2,
+      "segments": [
+        {
+          "segment_order": 1,
+          "from_location": "Colombo",
+          "to_location": "Kalutara",
+          "distance_km": 45,
+          "estimated_time_minutes": 72
+        }
+      ]
+    }
+  ],
+  "buses": [
+    {
+      "id": "BUS001",
+      "plate_no": "NB-1234",
+      "permit_number": "NTC2023001",
+      "operator_id": "SLTB01",
+      "operator_type": "SLTB",
+      "service_type": "LU",
+      "type": "AC Luxury",
+      "capacity": 55
+    },
+    {
+      "id": "BUS002",
+      "plate_no": "NB-1235",
+      "permit_number": "NTC2023002",
+      "operator_id": "SLTB01",
+      "operator_type": "SLTB",
+      "service_type": "N",
+      "type": "Normal",
+      "capacity": 62
+    },
+    {
+      "id": "BUS003",
+      "plate_no": "WP-5678",
+      "permit_number": "NTC2023003",
+      "operator_id": "PVT01",
+      "operator_type": "Private",
+      "service_type": "SE",
+      "type": "Semi-Luxury",
+      "capacity": 48
+    },
+    {
+      "id": "BUS004",
+      "plate_no": "WP-5679",
+      "permit_number": "NTC2023004",
+      "operator_id": "PVT01",
+      "operator_type": "Private",
+      "service_type": "LU",
+      "type": "AC Semi-Luxury",
+      "capacity": 52
+    },
+    {
+      "id": "BUS005",
+      "plate_no": "CB-9999",
+      "permit_number": "NTC2023005",
+      "operator_id": "SLTB02",
+      "operator_type": "SLTB",
+      "service_type": "N",
+      "type": "Normal",
+      "capacity": 60
+    },
+    {
+      "id": "BUS006",
+      "plate_no": "CB-9998",
+      "permit_number": "NTC2023006",
+      "operator_id": "SLTB02",
+      "operator_type": "SLTB",
+      "service_type": "SE",
+      "type": "Semi-Express",
+      "capacity": 58
+    },
+    {
+      "id": "BUS007",
+      "plate_no": "KA-7777",
+      "permit_number": "NTC2023007",
+      "operator_id": "PVT02",
+      "operator_type": "Private",
+      "service_type": "LU",
+      "type": "AC Luxury",
+      "capacity": 50
+    },
+    {
+      "id": "BUS008",
+      "plate_no": "KA-7776",
+      "permit_number": "NTC2023008",
+      "operator_id": "PVT02",
+      "operator_type": "Private",
+      "service_type": "N",
+      "type": "Normal",
+      "capacity": 65
+    },
+    {
+      "id": "BUS009",
+      "plate_no": "NC-4444",
+      "permit_number": "NTC2023009",
+      "operator_id": "SLTB03",
+      "operator_type": "SLTB",
+      "service_type": "SE",
+      "type": "Semi-Express",
+      "capacity": 56
+    },
+    {
+      "id": "BUS010",
+      "plate_no": "NC-4443",
+      "permit_number": "NTC2023010",
+      "operator_id": "SLTB03",
+      "operator_type": "SLTB",
+      "service_type": "LU",
+      "type": "AC Luxury",
+      "capacity": 54
+    },
+    {
+      "id": "BUS011",
+      "plate_no": "PE-2222",
+      "permit_number": "NTC2023011",
+      "operator_id": "PVT03",
+      "operator_type": "Private",
+      "service_type": "N",
+      "type": "Normal",
+      "capacity": 63
+    },
+    {
+      "id": "BUS012",
+      "plate_no": "PE-2221",
+      "permit_number": "NTC2023012",
+      "operator_id": "PVT03",
+      "operator_type": "Private",
+      "service_type": "SE",
+      "type": "Semi-Express",
+      "capacity": 49
+    },
+    {
+      "id": "BUS013",
+      "plate_no": "GE-8888",
+      "permit_number": "NTC2023013",
+      "operator_id": "SLTB04",
+      "operator_type": "SLTB",
+      "service_type": "LU",
+      "type": "AC Luxury",
+      "capacity": 53
+    },
+    {
+      "id": "BUS014",
+      "plate_no": "GE-8887",
+      "permit_number": "NTC2023014",
+      "operator_id": "SLTB04",
+      "operator_type": "SLTB",
+      "service_type": "N",
+      "type": "Normal",
+      "capacity": 61
+    },
+    {
+      "id": "BUS015",
+      "plate_no": "KU-5555",
+      "permit_number": "NTC2023015",
+      "operator_id": "PVT04",
+      "operator_type": "Private",
+      "service_type": "SE",
+      "type": "Semi-Express",
+      "capacity": 47
+    },
+    {
+      "id": "BUS016",
+      "plate_no": "KU-5554",
+      "permit_number": "NTC2023016",
+      "operator_id": "PVT04",
+      "operator_type": "Private",
+      "service_type": "LU",
+      "type": "AC Luxury",
+      "capacity": 51
+    },
+    {
+      "id": "BUS017",
+      "plate_no": "HA-1111",
+      "permit_number": "NTC2023017",
+      "operator_id": "SLTB05",
+      "operator_type": "SLTB",
+      "service_type": "N",
+      "type": "Normal",
+      "capacity": 64
+    },
+    {
+      "id": "BUS018",
+      "plate_no": "HA-1110",
+      "permit_number": "NTC2023018",
+      "operator_id": "SLTB05",
+      "operator_type": "SLTB",
+      "service_type": "SE",
+      "type": "Semi-Express",
+      "capacity": 57
+    },
+    {
+      "id": "BUS019",
+      "plate_no": "MA-3333",
+      "permit_number": "NTC2023019",
+      "operator_id": "PVT05",
+      "operator_type": "Private",
+      "service_type": "LU",
+      "type": "AC Luxury",
+      "capacity": 49
+    },
+    {
+      "id": "BUS020",
+      "plate_no": "MA-3332",
+      "permit_number": "NTC2023020",
+      "operator_id": "PVT05",
+      "operator_type": "Private",
+      "service_type": "N",
+      "type": "Normal",
+      "capacity": 66
+    },
+    {
+      "id": "BUS021",
+      "plate_no": "JA-6666",
+      "permit_number": "NTC2023021",
+      "operator_id": "SLTB01",
+      "operator_type": "SLTB",
+      "service_type": "SE",
+      "type": "Semi-Express",
+      "capacity": 55
+    },
+    {
+      "id": "BUS022",
+      "plate_no": "JA-6665",
+      "permit_number": "NTC2023022",
+      "operator_id": "SLTB01",
+      "operator_type": "SLTB",
+      "service_type": "LU",
+      "type": "AC Luxury",
+      "capacity": 52
+    },
+    {
+      "id": "BUS023",
+      "plate_no": "AN-7777",
+      "permit_number": "NTC2023023",
+      "operator_id": "PVT01",
+      "operator_type": "Private",
+      "service_type": "N",
+      "type": "Normal",
+      "capacity": 59
+    },
+    {
+      "id": "BUS024",
+      "plate_no": "AN-7776",
+      "permit_number": "NTC2023024",
+      "operator_id": "PVT01",
+      "operator_type": "Private",
+      "service_type": "SE",
+      "type": "Semi-Express",
+      "capacity": 46
+    },
+    {
+      "id": "BUS025",
+      "plate_no": "PO-9999",
+      "permit_number": "NTC2023025",
+      "operator_id": "SLTB02",
+      "operator_type": "SLTB",
+      "service_type": "LU",
+      "type": "AC Luxury",
+      "capacity": 50
+    }
+  ],
+  "trips": [
+    {
+      "id": "T001",
+      "route_id": "R001",
+      "bus_id": "BUS001",
+      "departure_time": "2024-01-15T08:00:00Z",
+      "arrival_time": "2024-01-15T11:30:00Z",
+      "status": "scheduled",
+      "direction": "outbound"
+    },
+    {
+      "id": "T002",
+      "route_id": "R001",
+      "bus_id": "BUS002",
+      "departure_time": "2024-01-15T14:00:00Z",
+      "arrival_time": "2024-01-15T17:30:00Z",
+      "status": "scheduled",
+      "direction": "inbound"
+    },
+    {
+      "id": "T003",
+      "route_id": "R002",
+      "bus_id": "BUS003",
+      "departure_time": "2024-01-15T09:00:00Z",
+      "arrival_time": "2024-01-15T10:00:00Z",
+      "status": "scheduled",
+      "direction": "outbound"
+    },
+    {
+      "id": "T004",
+      "route_id": "R002",
+      "bus_id": "BUS004",
+      "departure_time": "2024-01-15T15:00:00Z",
+      "arrival_time": "2024-01-15T16:00:00Z",
+      "status": "scheduled",
+      "direction": "inbound"
+    },
+    {
+      "id": "T005",
+      "route_id": "R003",
+      "bus_id": "BUS005",
+      "departure_time": "2024-01-15T10:00:00Z",
+      "arrival_time": "2024-01-15T11:30:00Z",
+      "status": "scheduled",
+      "direction": "outbound"
+    },
+    {
+      "id": "T006",
+      "route_id": "R003",
+      "bus_id": "BUS006",
+      "departure_time": "2024-01-15T16:00:00Z",
+      "arrival_time": "2024-01-15T17:30:00Z",
+      "status": "scheduled",
+      "direction": "inbound"
+    },
+    {
+      "id": "T007",
+      "route_id": "R004",
+      "bus_id": "BUS007",
+      "departure_time": "2024-01-15T08:30:00Z",
+      "arrival_time": "2024-01-15T12:30:00Z",
+      "status": "scheduled",
+      "direction": "outbound"
+    },
+    {
+      "id": "T008",
+      "route_id": "R004",
+      "bus_id": "BUS008",
+      "departure_time": "2024-01-15T14:30:00Z",
+      "arrival_time": "2024-01-15T18:30:00Z",
+      "status": "scheduled",
+      "direction": "inbound"
+    },
+    {
+      "id": "T009",
+      "route_id": "R005",
+      "bus_id": "BUS009",
+      "departure_time": "2024-01-15T11:00:00Z",
+      "arrival_time": "2024-01-15T12:12:00Z",
+      "status": "scheduled",
+      "direction": "outbound"
+    },
+    {
+      "id": "T010",
+      "route_id": "R005",
+      "bus_id": "BUS010",
+      "departure_time": "2024-01-15T17:00:00Z",
+      "arrival_time": "2024-01-15T18:12:00Z",
+      "status": "scheduled",
+      "direction": "inbound"
+    },
+    {
+      "id": "T011",
+      "route_id": "R001",
+      "bus_id": "BUS011",
+      "departure_time": "2024-01-15T06:00:00Z",
+      "arrival_time": "2024-01-15T09:30:00Z",
+      "status": "scheduled",
+      "direction": "outbound"
+    },
+    {
+      "id": "T012",
+      "route_id": "R001",
+      "bus_id": "BUS012",
+      "departure_time": "2024-01-15T12:00:00Z",
+      "arrival_time": "2024-01-15T15:30:00Z",
+      "status": "scheduled",
+      "direction": "inbound"
+    }
+  ],
+  "locations": [
+    {
+      "trip_id": "T001",
+      "bus_id": "BUS001",
+      "current_segment_id": 2,
+      "latitude": 7.2675,
+      "longitude": 80.5878,
+      "speed_kmh": 45.5,
+      "segment_progress_percentage": 67.5,
+      "total_route_progress_percentage": 34.2,
+      "estimated_delay_minutes": -3,
+      "timestamp": "2024-01-15T10:30:00Z"
+    },
+    {
+      "trip_id": "T003",
+      "bus_id": "BUS003",
+      "current_segment_id": 1,
+      "latitude": 7.0421,
+      "longitude": 79.8982,
+      "speed_kmh": 38.2,
+      "segment_progress_percentage": 45.8,
+      "total_route_progress_percentage": 45.8,
+      "estimated_delay_minutes": 2,
+      "timestamp": "2024-01-15T09:45:00Z"
+    },
+    {
+      "trip_id": "T007",
+      "bus_id": "BUS007",
+      "current_segment_id": 3,
+      "latitude": 7.2833,
+      "longitude": 80.6333,
+      "speed_kmh": 42.1,
+      "segment_progress_percentage": 78.3,
+      "total_route_progress_percentage": 52.1,
+      "estimated_delay_minutes": -1,
+      "timestamp": "2024-01-15T11:15:00Z"
+    }
+  ],
+  "users": [
+    {
+      "email": "admin@ntc.gov.lk",
+      "role": "admin",
+      "password": "adminpass",
+      "operator_id": null,
+      "operator_type": null
+    },
+    {
+      "email": "sltb01@sltb.lk",
+      "role": "operator",
+      "password": "sltb01pass",
+      "operator_id": "SLTB01",
+      "operator_type": "SLTB"
+    },
+    {
+      "email": "sltb02@sltb.lk",
+      "role": "operator",
+      "password": "sltb02pass",
+      "operator_id": "SLTB02",
+      "operator_type": "SLTB"
+    },
+    {
+      "email": "sltb03@sltb.lk",
+      "role": "operator",
+      "password": "sltb03pass",
+      "operator_id": "SLTB03",
+      "operator_type": "SLTB"
+    },
+    {
+      "email": "sltb04@sltb.lk",
+      "role": "operator",
+      "password": "sltb04pass",
+      "operator_id": "SLTB04",
+      "operator_type": "SLTB"
+    },
+    {
+      "email": "sltb05@sltb.lk",
+      "role": "operator",
+      "password": "sltb05pass",
+      "operator_id": "SLTB05",
+      "operator_type": "SLTB"
+    },
+    {
+      "email": "pvt01@private.lk",
+      "role": "operator",
+      "password": "pvt01pass",
+      "operator_id": "PVT01",
+      "operator_type": "Private"
+    },
+    {
+      "email": "pvt02@private.lk",
+      "role": "operator",
+      "password": "pvt02pass",
+      "operator_id": "PVT02",
+      "operator_type": "Private"
+    },
+    {
+      "email": "pvt03@private.lk",
+      "role": "operator",
+      "password": "pvt03pass",
+      "operator_id": "PVT03",
+      "operator_type": "Private"
+    },
+    {
+      "email": "pvt04@private.lk",
+      "role": "operator",
+      "password": "pvt04pass",
+      "operator_id": "PVT04",
+      "operator_type": "Private"
+    },
+    {
+      "email": "pvt05@private.lk",
+      "role": "operator",
+      "password": "pvt05pass",
+      "operator_id": "PVT05",
+      "operator_type": "Private"
+    },
+    {
+      "email": "commuter1@example.com",
+      "role": "commuter",
+      "password": "commuterpass",
+      "operator_id": null,
+      "operator_type": null
+    },
+    {
+      "email": "commuter2@example.com",
+      "role": "commuter",
+      "password": "commuterpass",
+      "operator_id": null,
+      "operator_type": null
+    }
+  ],
+  "fares": [
+    {
+      "service_type": "N",
+      "route_id": "R001",
+      "base_fare": 120.00,
+      "per_km_rate": 1.50,
+      "effective_from": "2024-01-01",
+      "effective_to": null
+    },
+    {
+      "service_type": "LU",
+      "route_id": "R001",
+      "base_fare": 180.00,
+      "per_km_rate": 2.25,
+      "effective_from": "2024-01-01",
+      "effective_to": null
+    },
+    {
+      "service_type": "SE",
+      "route_id": "R001",
+      "base_fare": 150.00,
+      "per_km_rate": 1.80,
+      "effective_from": "2024-01-01",
+      "effective_to": null
+    },
+    {
+      "service_type": "N",
+      "route_id": "R002",
+      "base_fare": 80.00,
+      "per_km_rate": 1.20,
+      "effective_from": "2024-01-01",
+      "effective_to": null
+    },
+    {
+      "service_type": "LU",
+      "route_id": "R002",
+      "base_fare": 120.00,
+      "per_km_rate": 1.80,
+      "effective_from": "2024-01-01",
+      "effective_to": null
+    },
+    {
+      "service_type": "SE",
+      "route_id": "R002",
+      "base_fare": 100.00,
+      "per_km_rate": 1.50,
+      "effective_from": "2024-01-01",
+      "effective_to": null
+    },
+    {
+      "service_type": "N",
+      "route_id": "R003",
+      "base_fare": 95.00,
+      "per_km_rate": 1.35,
+      "effective_from": "2024-01-01",
+      "effective_to": null
+    },
+    {
+      "service_type": "LU",
+      "route_id": "R003",
+      "base_fare": 140.00,
+      "per_km_rate": 2.00,
+      "effective_from": "2024-01-01",
+      "effective_to": null
+    },
+    {
+      "service_type": "SE",
+      "route_id": "R003",
+      "base_fare": 115.00,
+      "per_km_rate": 1.65,
+      "effective_from": "2024-01-01",
+      "effective_to": null
+    },
+    {
+      "service_type": "N",
+      "route_id": "R004",
+      "base_fare": 140.00,
+      "per_km_rate": 1.60,
+      "effective_from": "2024-01-01",
+      "effective_to": null
+    },
+    {
+      "service_type": "LU",
+      "route_id": "R004",
+      "base_fare": 210.00,
+      "per_km_rate": 2.40,
+      "effective_from": "2024-01-01",
+      "effective_to": null
+    },
+    {
+      "service_type": "SE",
+      "route_id": "R004",
+      "base_fare": 175.00,
+      "per_km_rate": 2.00,
+      "effective_from": "2024-01-01",
+      "effective_to": null
+    },
+    {
+      "service_type": "N",
+      "route_id": "R005",
+      "base_fare": 85.00,
+      "per_km_rate": 1.25,
+      "effective_from": "2024-01-01",
+      "effective_to": null
+    },
+    {
+      "service_type": "LU",
+      "route_id": "R005",
+      "base_fare": 125.00,
+      "per_km_rate": 1.85,
+      "effective_from": "2024-01-01",
+      "effective_to": null
+    },
+    {
+      "service_type": "SE",
+      "route_id": "R005",
+      "base_fare": 105.00,
+      "per_km_rate": 1.55,
+      "effective_from": "2024-01-01",
+      "effective_to": null
+    }
+  ]
+}
