@@ -57,12 +57,16 @@ jobs:
             echo "🔍 Checking container status..."
             docker-compose ps
             
-            echo "📊 Verifying database data population data..."
+            echo "📊 Verifying database data population..."
             sleep 10  # Wait for database to be ready
             
             # Check if routes and buses data was populated
-            ROUTES_COUNT=$(docker-compose exec -T postgres psql -U $DB_USER -d $DB_NAME -c "SELECT COUNT(*) FROM routes;" | tail -3 | head -1 | tr -d ' ')
-            BUSES_COUNT=$(docker-compose exec -T postgres psql -U $DB_USER -d $DB_NAME -c "SELECT COUNT(*) FROM buses;" | tail -3 | head -1 | tr -d ' ')
+            ROUTES_COUNT=$(docker-compose exec -T postgres psql -U postgres -d bus_tracking_db -c "SELECT COUNT(*) FROM routes;" | tail -3 | head -1 | tr -d ' ')
+            BUSES_COUNT=$(docker-compose exec -T postgres psql -U postgres -d bus_tracking_db -c "SELECT COUNT(*) FROM buses;" | tail -3 | head -1 | tr -d ' ')
+            
+            echo "📈 Database population results:"
+            echo "   Routes: $ROUTES_COUNT (expected: 5)"
+            echo "   Buses: $BUSES_COUNT (expected: 25)"
             
             echo "📈 Database population results:"
             echo "   Routes: $ROUTES_COUNT (expected: 5)"
