@@ -43,6 +43,16 @@ jobs:
             
             # Force database reset to populate initial data from init.sql
             echo "🔄 Force database reset to populate routes and buses data..."
+            
+            # Ensure .env file is available for docker-compose
+            if [ ! -f .env ]; then
+                echo "❌ .env file not found!"
+                exit 1
+            fi
+            
+            # Export environment variables for docker-compose
+            export $(grep -v '^#' .env | xargs)
+            
             docker-compose down -v
             
             echo "🧹 Cleaning up old Docker data..."
@@ -58,11 +68,29 @@ jobs:
             docker-compose ps
             
             echo "📊 Verifying database data population..."
-            sleep 10  # Wait for database to be ready
             
-            # Check if routes and buses data was populated
-            ROUTES_COUNT=$(docker-compose exec -T postgres psql -U postgres -d bus_tracking_db -c "SELECT COUNT(*) FROM routes;" | tail -3 | head -1 | tr -d ' ')
-            BUSES_COUNT=$(docker-compose exec -T postgres psql -U postgres -d bus_tracking_db -c "SELECT COUNT(*) FROM buses;" | tail -3 | head -1 | tr -d ' ')
+            # Wait for database to be fully ready and init.sql to complete
+            echo "⏳ Waiting for database initialization..."
+            for i in {1..30}; do
+                if docker-compose exec -T postgres psql -U postgres -lqt | cut -d\| -f1 | grep -qw bus_tracking_db; then
+                    echo "✅ Database 'bus_tracking_db' is ready"
+                    break
+                fi
+                echo "Waiting for database... (attempt $i/30)"
+                sleep 10
+                if [ $i -eq 30 ]; then
+                    echo "❌ Database initialization timeout"
+                    exit 1
+                fi
+            done
+            
+            # Now check if routes and buses data was populated
+            ROUTES_COUNT=$(docker-compose exec -T postgres psql -U postgres -d bus_tracking_db -c "SELECT COUNT(*) FROM routes;" --quiet --tuples-only | tr -d ' ')
+            BUSES_COUNT=$(docker-compose exec -T postgres psql -U postgres -d bus_tracking_db -c "SELECT COUNT(*) FROM buses;" --quiet --tuples-only | tr -d ' ')
+            
+            echo "📈 Database population results:"
+            echo "   Routes: $ROUTES_COUNT (expected: 5)"
+            echo "   Buses: $BUSES_COUNT (expected: 25)"
             
             echo "📈 Database population results:"
             echo "   Routes: $ROUTES_COUNT (expected: 5)"
