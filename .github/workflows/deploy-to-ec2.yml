@@ -44,14 +44,21 @@ jobs:
             # Force database reset to populate initial data from init.sql
             echo "🔄 Force database reset to populate routes and buses data..."
             
-            # Ensure .env file is available for docker-compose
+            # Check and load environment variables
+            echo "🔧 Loading environment variables..."
             if [ ! -f .env ]; then
                 echo "❌ .env file not found!"
                 exit 1
             fi
             
-            # Export environment variables for docker-compose
-            export $(grep -v '^#' .env | xargs)
+            # Export environment variables explicitly
+            export DB_NAME="bus_tracking_db"
+            export DB_USER="postgres" 
+            export DB_PASSWORD="postgres123"
+            
+            echo "📋 Using database config:"
+            echo "   DB_NAME: $DB_NAME"
+            echo "   DB_USER: $DB_USER"
             
             docker-compose down -v
             
@@ -72,14 +79,30 @@ jobs:
             # Wait for database to be fully ready and init.sql to complete
             echo "⏳ Waiting for database initialization..."
             for i in {1..30}; do
-                if docker-compose exec -T postgres psql -U postgres -lqt | cut -d\| -f1 | grep -qw bus_tracking_db; then
-                    echo "✅ Database 'bus_tracking_db' is ready"
-                    break
+                echo "Checking database status... (attempt $i/30)"
+                
+                # Check if postgres is accepting connections
+                if docker-compose exec -T postgres pg_isready -U postgres -d postgres >/dev/null 2>&1; then
+                    echo "✅ PostgreSQL is accepting connections"
+                    
+                    # Check if our database exists
+                    if docker-compose exec -T postgres psql -U postgres -lqt 2>/dev/null | cut -d\| -f1 | grep -qw bus_tracking_db; then
+                        echo "✅ Database 'bus_tracking_db' exists"
+                        break
+                    else
+                        echo "⏳ Database 'bus_tracking_db' not found yet, waiting..."
+                    fi
+                else
+                    echo "⏳ PostgreSQL not ready yet, waiting..."
                 fi
-                echo "Waiting for database... (attempt $i/30)"
+                
                 sleep 10
-                if [ $i -eq 30 ]; then
+                
+                if [ $i -eq 10 ]; then
                     echo "❌ Database initialization timeout"
+                    echo "🔍 Debugging information:"
+                    echo "   PostgreSQL logs:"
+                    docker-compose logs postgres --tail=20
                     exit 1
                 fi
             done
