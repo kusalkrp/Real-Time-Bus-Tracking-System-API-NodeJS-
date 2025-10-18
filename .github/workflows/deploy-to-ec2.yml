@@ -57,7 +57,7 @@ jobs:
             echo "🔍 Checking container status..."
             docker-compose ps
             
-            echo "📊 Verifying database data population..."
+            echo "📊 Verifying database data population data..."
             sleep 10  # Wait for database to be ready
             
             # Check if routes and buses data was populated
